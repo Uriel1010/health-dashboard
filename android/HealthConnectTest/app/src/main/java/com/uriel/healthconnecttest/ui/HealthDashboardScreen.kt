@@ -46,6 +46,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -66,6 +68,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.res.stringResource
+import com.uriel.healthconnecttest.R
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -636,15 +641,24 @@ fun HealthDashboardScreen(modifier: Modifier = Modifier, openFood: Boolean = fal
         bottomBar = {
             NavigationBar {
                 AppTab.entries.forEach { tab ->
+                    val hasUpdate = tab == AppTab.Settings && updateState.release != null
+                    val updateDescription = stringResource(R.string.app_update_available)
                     NavigationBarItem(
+                        modifier = Modifier.semantics {
+                            if (hasUpdate) stateDescription = updateDescription
+                        },
                         selected = selectedTab == tab,
                         onClick = { selectedTab = tab },
-                        icon = { Icon(when (tab) {
+                        icon = {
+                            BadgedBox(badge = { if (hasUpdate) Badge() }) {
+                                Icon(when (tab) {
                             AppTab.Today -> Icons.Default.Home
                             AppTab.Food -> Icons.AutoMirrored.Filled.List
                             AppTab.Health -> Icons.Default.Favorite
                             AppTab.Settings -> Icons.Default.Settings
-                        }, contentDescription = tab.label) },
+                                }, contentDescription = tab.label)
+                            }
+                        },
                         label = if (LocalDensity.current.fontScale < 1.5f) {
                             { Text(tab.label) }
                         } else null
