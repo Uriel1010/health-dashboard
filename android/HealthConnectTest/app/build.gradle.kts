@@ -1,6 +1,13 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+}
+
+val productionSigningPath = providers.environmentVariable("HEALTH_SIGNING_PROPERTIES").orNull
+val productionSigning = productionSigningPath?.let { path ->
+    Properties().apply { file(path).inputStream().use { load(it) } }
 }
 
 android {
@@ -11,15 +18,26 @@ android {
         applicationId = "com.uriel.healthconnecttest"
         minSdk = 28
         targetSdk = 36
-        versionCode = 2
-        versionName = "0.2.0"
+        versionCode = 3
+        versionName = "0.2.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (productionSigning != null) create("production") {
+            storeFile = file(productionSigning.getProperty("storeFile"))
+            storePassword = productionSigning.getProperty("storePassword")
+            keyAlias = productionSigning.getProperty("keyAlias")
+            keyPassword = productionSigning.getProperty("keyPassword")
+        }
+    }
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isDebuggable = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            if (productionSigning != null) signingConfig = signingConfigs.getByName("production")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -32,6 +50,12 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+}
+
+tasks.configureEach {
+    if (name in setOf("packageRelease", "bundleRelease")) doFirst {
+        check(productionSigning != null) { "Set HEALTH_SIGNING_PROPERTIES to your private signing properties file before building a release." }
     }
 }
 

@@ -9,6 +9,12 @@ class ReleasePolicyTest {
         "a".repeat(64), 28, "Update")
 
     @Test fun acceptsNewCompatibleRelease() { assertTrue(ReleasePolicy.eligible(release, 2, 36)) }
+    @Test fun separatesProductionAndDevelopmentUpdates() {
+        assertTrue(ReleasePolicy.channelTag("android-production-v0.2.1", true))
+        assertFalse(ReleasePolicy.channelTag("android-production-v0.2.1", false))
+        assertTrue(ReleasePolicy.channelTag("android-v0.2.0", false))
+        assertFalse(ReleasePolicy.channelTag("android-v0.2.0", true))
+    }
     @Test fun refusesDowngradesAndSameVersion() {
         assertFalse(ReleasePolicy.eligible(release, 3, 36))
         assertFalse(ReleasePolicy.eligible(release, 4, 36))

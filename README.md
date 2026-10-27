@@ -22,7 +22,7 @@ Use HTTPS, secure cookies and explicit allowed origins for remote deployment. Ex
 
 Open `android/HealthConnectTest` in Android Studio, configure your Android SDK locally, and run `./gradlew assembleDebug testDebugUnitTest` (Windows: `gradlew.bat`). Configure your server URL and account in the app; grant Health Connect and notification permissions as needed. Local SDK paths, account sessions and tokens are not included.
 
-GitHub Android releases currently provide a **debug-signed development APK**, not a production/Play Store signing identity. It may not update over an APK signed by a different key. Back up settings before switching installations.
+Production Android releases provide an optimized, non-debuggable APK signed with the project's private production identity, plus an AAB for possible future store submission. See [production signing](docs/PRODUCTION_SIGNING.md). Development prereleases remain debug-signed and use a separate update channel. Android cannot update between these signing identities in place; plan a manual migration before uninstalling an existing app. No Google Play submission or approval is implied.
 
 Notifications use scheduled polling, not server push. Nutrition totals and goals follow the server timezone and account reset hour. Health data availability depends on source apps and Health Connect permissions.
 
@@ -36,6 +36,6 @@ cd ../android/HealthConnectTest && ./gradlew assembleDebug testDebugUnitTest
 
 ## Releases
 
-Dashboard and Android use separate tags: `dashboard-v0.1.0` and `android-v0.1.0`. Dashboard assets contain portable source and a frontend build; Android assets contain a development APK. Deployment configuration and user health data are never release assets.
+Dashboard, Android development, and Android production use separate tags: `dashboard-vX.Y.Z`, `android-vX.Y.Z`, and `android-production-vX.Y.Z`. Android releases include update metadata and checksums. Deployment configuration, private signing material and user health data are never release assets.
 
 See `SECURITY.md` before deployment. This project is not a medical device.

@@ -34,3 +34,5 @@ build/
 *.apk
 *.aab
 .DS_Store
+**/signing.properties
+**/keystore.properties

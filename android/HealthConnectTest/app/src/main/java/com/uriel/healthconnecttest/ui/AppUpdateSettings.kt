@@ -16,7 +16,7 @@ fun AppUpdateSettings(updates: AppUpdates) {
     val scope = rememberCoroutineScope()
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("App updates", style = MaterialTheme.typography.titleLarge)
-        Text("Health Companion ${updates.versionName}", style = MaterialTheme.typography.bodyMedium,
+        Text("Health Companion ${updates.versionName} | ${if (updates.production) "Production" else "Development"}", style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(state.message, style = MaterialTheme.typography.bodyMedium)
         if (state.checking) LinearProgressIndicator(Modifier.fillMaxWidth())

@@ -39,6 +39,7 @@ class AppUpdates(private val context: Context) {
     private val mutex = Mutex()
     private val installed get() = context.packageManager.getPackageInfo(context.packageName, 0)
     val versionName get() = installed.versionName.orEmpty()
+    val production get() = context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE == 0
 
     suspend fun check() = mutex.withLock {
         mutable.value = mutable.value.copy(checking = true, message = "Checking GitHub releases...")
@@ -49,7 +50,7 @@ class AppUpdates(private val context: Context) {
                 for (index in 0 until releases.length()) {
                     val item = releases.getJSONObject(index)
                     val tag = item.optString("tag_name")
-                    if (item.optBoolean("draft") || !tag.matches(Regex("android-v[0-9]+\\.[0-9]+\\.[0-9]+"))) continue
+                    if (item.optBoolean("draft") || !ReleasePolicy.channelTag(tag, production)) continue
                     val assets = item.getJSONArray("assets")
                     val manifestAsset = (0 until assets.length()).map { assets.getJSONObject(it) }
                         .firstOrNull { it.optString("name") == "update.json" } ?: continue
