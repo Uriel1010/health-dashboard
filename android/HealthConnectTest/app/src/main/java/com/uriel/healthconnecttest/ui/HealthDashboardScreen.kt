@@ -111,6 +111,9 @@ fun HealthDashboardScreen(modifier: Modifier = Modifier, openFood: Boolean = fal
     val manager = remember { HealthConnectManager(context.applicationContext) }
     val repository = remember { ServerSettingsRepository(context.applicationContext) }
     val apiClient = remember { HealthSyncApiClient() }
+    val updates = remember { com.uriel.healthconnecttest.update.AppUpdates(context) }
+    val updateState by updates.state.collectAsState()
+    LaunchedEffect(Unit) { updates.check() }
     val snapshotBuilder = remember { HealthSnapshotBuilder(context.applicationContext, manager) }
     val settings by repository.settings.collectAsState(initial = ServerSettings())
     val coroutineScope = rememberCoroutineScope()
@@ -623,7 +626,7 @@ fun HealthDashboardScreen(modifier: Modifier = Modifier, openFood: Boolean = fal
         topBar = {
             Surface(color = MaterialTheme.colorScheme.surface) {
                 Column(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 20.dp, vertical = 12.dp)) {
-                    Text("Health Connect", style = MaterialTheme.typography.titleLarge)
+                    Text("Health Companion", style = MaterialTheme.typography.titleMedium)
                     Text(LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, d MMMM")),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -658,11 +661,18 @@ fun HealthDashboardScreen(modifier: Modifier = Modifier, openFood: Boolean = fal
                 .imePadding()
                 .verticalScroll(remember(selectedTab) { androidx.compose.foundation.ScrollState(0) })
                 .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            if (updateState.release != null && selectedTab != AppTab.Settings) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Update ${updateState.release?.versionName} available", modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                    TextButton(onClick = { selectedTab = AppTab.Settings }) { Text("View update") }
+                }
+            }
             when (selectedTab) {
                 AppTab.Today -> {
-                    NutritionOverview(nutritionProgress, nutritionDateLabel, serverMeals,
+                    NutritionDashboard(nutritionProgress, nutritionDateLabel, serverMeals,
                         isLoadingServerMeals, mealListMessage,
                         onRefresh = { loadTodayMeals(true) }, onViewMeals = { selectedTab = AppTab.Food })
                     TodayScreen(
@@ -724,6 +734,7 @@ fun HealthDashboardScreen(modifier: Modifier = Modifier, openFood: Boolean = fal
                     onRefreshAll = { refreshAll() }
                 )
                 AppTab.Settings -> {
+                    AppUpdateSettings(updates)
                     MealNotificationSettings(settings, repository)
                     SettingsScreen(
                     availability = availability,
@@ -815,8 +826,13 @@ private fun TodayScreen(
     onTestConnection: () -> Unit,
     onSyncNow: () -> Unit
 ) {
-    Text(text = "Your day", style = MaterialTheme.typography.headlineSmall)
+    Text(text = "Activity & health", style = MaterialTheme.typography.titleLarge)
     TodaySummaryCard(cards = cards)
+    var showSyncDetails by rememberSaveable { mutableStateOf(false) }
+    TextButton(onClick = { showSyncDetails = !showSyncDetails }) {
+        Text(if (showSyncDetails) "Hide sync details" else "Sync details")
+    }
+    if (showSyncDetails) {
     DailyStatusCard(
         availability = availability,
         nutritionWriteGranted = nutritionWriteGranted,
@@ -831,7 +847,8 @@ private fun TodayScreen(
         onTestConnection = onTestConnection,
         onSyncNow = onSyncNow
     )
-    if (mealMessage.isNotBlank() || serverMealSyncMessage.isNotBlank()) {
+    }
+    if (showSyncDetails && (mealMessage.isNotBlank() || serverMealSyncMessage.isNotBlank())) {
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(
                 modifier = Modifier.padding(16.dp),

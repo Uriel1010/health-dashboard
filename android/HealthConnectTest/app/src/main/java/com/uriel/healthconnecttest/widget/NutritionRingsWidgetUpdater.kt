@@ -51,8 +51,8 @@ object NutritionRingsWidgetUpdater {
         val views = RemoteViews(context.packageName, R.layout.widget_nutrition_rings)
         views.setImageViewBitmap(R.id.widget_rings_image, drawRings(progress, accentColor))
         views.setTextViewText(R.id.widget_rings_kcal, compactCalories(progress.caloriesKcal))
-        views.setTextColor(R.id.widget_rings_kcal, Color.WHITE)
-        views.setTextColor(R.id.widget_rings_unit, withAlpha(accentColor, 230))
+        views.setTextColor(R.id.widget_rings_kcal, context.getColor(R.color.widget_foreground))
+        views.setTextColor(R.id.widget_rings_unit, context.getColor(R.color.widget_muted))
         views.setContentDescription(R.id.widget_rings_root,
             "Nutrition today: ${progress.caloriesKcal.toInt()} calories, protein ${progress.proteinProgress} percent, fiber ${progress.fiberProgress} percent. Open Health Connect.")
         views.setOnClickPendingIntent(R.id.widget_rings_root, WidgetLaunchIntent.openAppPendingIntent(context))

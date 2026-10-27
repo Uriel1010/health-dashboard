@@ -42,16 +42,18 @@ object NutritionWidgetUpdater {
             "Rendering nutrition widget values calories=${progress.caloriesKcal}/${progress.caloriesProgress}% " +
                 "protein=${progress.proteinG}/${progress.proteinProgress}% fiber=${progress.fiberG}/${progress.fiberProgress}%"
         )
-        val views = RemoteViews(context.packageName, R.layout.widget_nutrition_progress)
-        views.setInt(R.id.widget_accent_bar, "setBackgroundColor", accentColor)
-        views.setTextColor(R.id.widget_title, accentColor)
+        val views = RemoteViews(context.packageName, R.layout.widget_nutrition_summary)
         views.setTextViewText(R.id.widget_calories_value, "${progress.caloriesKcal.toInt()}")
         views.setTextViewText(R.id.widget_calories_label, "of ${progress.caloriesGoal.toInt()} kcal")
-        views.setTextViewText(R.id.widget_calories_left, caloriesLeft(progress))
         views.setContentDescription(R.id.widget_root,
             "Nutrition today: ${progress.caloriesKcal.toInt()} calories, ${progress.proteinG.toInt()} grams protein, ${progress.fiberG.toInt()} grams fiber. Open Health Connect.")
-        views.setTextViewText(R.id.widget_protein_value, "${progress.proteinG.toInt()} / ${progress.proteinGoal.toInt()} g")
-        views.setTextViewText(R.id.widget_fiber_value, "${progress.fiberG.toInt()} / ${progress.fiberGoal.toInt()} g")
+        views.setTextViewText(R.id.widget_protein_value, "${progress.proteinG.toInt()} g")
+        views.setTextViewText(R.id.widget_fiber_value, "${progress.fiberG.toInt()} g")
+        views.setTextViewText(R.id.widget_protein_goal, "of ${progress.proteinGoal.toInt()} g")
+        views.setTextViewText(R.id.widget_fiber_goal, "of ${progress.fiberGoal.toInt()} g")
+        if (android.os.Build.VERSION.SDK_INT >= 31) {
+            views.setColorStateList(R.id.widget_calories_progress, "setProgressTintList", android.content.res.ColorStateList.valueOf(accentColor))
+        }
         views.setProgressBar(R.id.widget_calories_progress, 100, progress.caloriesProgress, false)
         views.setProgressBar(R.id.widget_protein_progress, 100, progress.proteinProgress, false)
         views.setProgressBar(R.id.widget_fiber_progress, 100, progress.fiberProgress, false)
