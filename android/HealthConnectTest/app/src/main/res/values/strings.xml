@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">HealthConnectTest</string>
+    <string name="nutrition_widget_description">Daily nutrition progress</string>
+    <string name="nutrition_rings_widget_description">Daily nutrition rings</string>
+</resources>

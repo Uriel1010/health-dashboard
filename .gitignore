@@ -1,0 +1,36 @@
+# Local deployment and secrets
+.env
+.env.*
+!.env.example
+docker-compose.override.yml
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+local.properties
+# Private data and exports
+backups/
+postgres_data/
+*.db
+*.sqlite*
+*.sql
+*.dump
+*.log
+.playwright-mcp/
+# Generated and machine-local files
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+node_modules/
+dist/
+.vite/
+.idea/
+.gradle/
+.kotlin/
+build/
+.cxx/
+*.apk
+*.aab
+.DS_Store

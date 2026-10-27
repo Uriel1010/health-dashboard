@@ -1,0 +1,65 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-health_dashboard}
+      POSTGRES_USER: ${POSTGRES_USER:-health}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env}
+      INGEST_API_TOKEN: ${INGEST_API_TOKEN:?Set INGEST_API_TOKEN in .env}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+      APP_TIMEZONE: ${APP_TIMEZONE:-UTC}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3016,http://127.0.0.1:3016}
+    ports:
+      - "0.0.0.0:${API_HOST_PORT:-8015}:8000"
+      - "0.0.0.0:${FRONTEND_HOST_PORT:-3016}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+        VITE_PUBLIC_API_BASE_URL: ${VITE_PUBLIC_API_BASE_URL:-https://health.example.com}
+    restart: unless-stopped
+    depends_on:
+      - api
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    profiles:
+      - tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARED_TOKEN}
+    depends_on:
+      - api
+      - frontend
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+    name: health-dashboard_net
+    ipam:
+      config:
+        - subnet: 10.215.15.0/24

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:configure="com.uriel.healthconnecttest.widget.WidgetAccentConfigActivity"
+    android:description="@string/nutrition_rings_widget_description"
+    android:initialLayout="@layout/widget_nutrition_rings"
+    android:minWidth="54dp"
+    android:minHeight="54dp"
+    android:previewLayout="@layout/widget_nutrition_rings"
+    android:resizeMode="none"
+    android:targetCellWidth="1"
+    android:targetCellHeight="1"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen" />
