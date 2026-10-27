@@ -2,7 +2,7 @@
 
 Your health metrics and nutrition journal, on your own server. A React dashboard and a native Kotlin / Jetpack Compose Android app share one account, one set of nutrition goals, and one nutrition-day boundary.
 
-[Download Android APK](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.2.1/app-release.apk) · [Production release](https://github.com/Uriel1010/health-dashboard/releases/tag/android-production-v0.2.1) · [All releases](https://github.com/Uriel1010/health-dashboard/releases) · [API documentation](docs/USER_API.md)
+[Download Android APK](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.2.2/app-release.apk) · [Production release](https://github.com/Uriel1010/health-dashboard/releases/tag/android-production-v0.2.2) · [All releases](https://github.com/Uriel1010/health-dashboard/releases) · [API documentation](docs/USER_API.md)
 
 ![Desktop health dashboard showing sample activity, heart rate, sleep, weight, and sync status](docs/images/dashboard-desktop.png)
 
@@ -69,8 +69,8 @@ For remote access, deploy behind HTTPS, set `SESSION_COOKIE_SECURE=true`, and ex
 
 **Minimum Android version: 9 / API 28.** Health features additionally require Health Connect availability, a data-producing app, and the relevant permissions.
 
-1. Download the [production APK](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.2.1/app-release.apk).
-2. Verify its SHA-256 against the [release checksums](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.2.1/SHA256SUMS).
+1. Download the [production APK](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.2.2/app-release.apk).
+2. Verify its SHA-256 against the [release checksums](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.2.2/SHA256SUMS).
 3. Install the APK and enter your server URL and dashboard account in Settings. Configure the account ingest token for health uploads and meal writes.
 4. Grant the Health Connect permissions you want to use. Optionally enable new-meal notifications and add a nutrition widget from your launcher.
 
@@ -127,6 +127,7 @@ Production builds require an external private signing configuration. Signing key
 
 ## Documentation
 
+- [Daily nutrition goals in web and Android](docs/NUTRITION_GOALS.md)
 - [User API guide](docs/USER_API.md)
 - [API manual](docs/API_MANUAL.md)
 - [Administrator API](docs/ADMIN_API.md)

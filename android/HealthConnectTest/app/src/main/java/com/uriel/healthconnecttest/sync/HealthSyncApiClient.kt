@@ -228,6 +228,36 @@ class HealthSyncApiClient(
         }
     }
 
+    suspend fun fetchNutritionGoals(settings: ServerSettings): NutritionGoals {
+        validateReadSettings(settings)
+        return withContext(Dispatchers.IO) {
+            val request = Request.Builder().url("${settings.serverBaseUrl.trimEnd('/')}/api/v1/auth/me")
+                .header("Cookie", settings.readToken).build()
+            client.newCall(request).execute().use { response ->
+                check(response.isSuccessful) { "Unable to load goals HTTP ${response.code}. Check your dashboard sign-in." }
+                parseNutritionGoals(JSONObject(response.body?.string().orEmpty()).getJSONObject("nutritionGoals"))
+            }
+        }
+    }
+
+    suspend fun saveNutritionGoals(settings: ServerSettings, goals: NutritionGoals): NutritionGoals {
+        validateReadSettings(settings)
+        val payload = JSONObject().put("nutritionGoals", JSONObject()
+            .put("caloriesKcal", goals.caloriesKcal).put("proteinG", goals.proteinG)
+            .put("carbsG", goals.carbsG).put("fatG", goals.fatG).put("fiberG", goals.fiberG))
+        return withContext(Dispatchers.IO) {
+            val request = Request.Builder().url("${settings.serverBaseUrl.trimEnd('/')}/api/v1/account/preferences")
+                .header("Cookie", settings.readToken).patch(payload.toString().toRequestBody(JSON)).build()
+            client.newCall(request).execute().use { response ->
+                check(response.isSuccessful) { "Goals were not saved HTTP ${response.code}. Check your dashboard sign-in and try again." }
+                parseNutritionGoals(JSONObject(response.body?.string().orEmpty()).getJSONObject("nutritionGoals"))
+            }
+        }
+    }
+
+    private fun parseNutritionGoals(json: JSONObject) = NutritionGoals(json.getInt("caloriesKcal"),
+        json.getInt("proteinG"), json.getInt("carbsG"), json.getInt("fatG"), json.getInt("fiberG"))
+
     suspend fun fetchCurrentMeals(settings: ServerSettings): ServerMealsFetchResult {
         validateReadSettings(settings)
         return withContext(Dispatchers.IO) {
@@ -242,7 +272,8 @@ class HealthSyncApiClient(
                     val goals = account.getJSONObject("nutritionGoals")
                     ServerNutritionDay(LocalDate.parse(account.getString("currentNutritionDate")),
                         account.getString("serverTimezone"), account.getInt("nutritionResetHour"),
-                        goals.getDouble("caloriesKcal"), goals.getDouble("proteinG"), goals.getDouble("fiberG"))
+                        goals.getDouble("caloriesKcal"), goals.getDouble("proteinG"), goals.getDouble("fiberG"),
+                        goals.getDouble("carbsG"), goals.getDouble("fatG"))
                 }
                 fetchServerMeals(settings, day.date, day.date).copy(nutritionDay = day)
             } catch (exception: Exception) {

@@ -22,11 +22,17 @@ data class NutritionWidgetProgress(
     val fiberG: Double,
     val caloriesGoal: Double = NutritionWidgetStore.CALORIES_GOAL_KCAL,
     val proteinGoal: Double = NutritionWidgetStore.PROTEIN_GOAL_G,
-    val fiberGoal: Double = NutritionWidgetStore.FIBER_GOAL_G
+    val fiberGoal: Double = NutritionWidgetStore.FIBER_GOAL_G,
+    val carbsG: Double = 0.0,
+    val fatG: Double = 0.0,
+    val carbsGoal: Double = 0.0,
+    val fatGoal: Double = 0.0
 ) {
     val caloriesProgress: Int = progressPercent(caloriesKcal, caloriesGoal)
     val proteinProgress: Int = progressPercent(proteinG, proteinGoal)
     val fiberProgress: Int = progressPercent(fiberG, fiberGoal)
+    val carbsProgress: Int = progressPercent(carbsG, carbsGoal)
+    val fatProgress: Int = progressPercent(fatG, fatGoal)
 }
 
 object NutritionWidgetStore {
@@ -45,13 +51,19 @@ object NutritionWidgetStore {
                 fiberG = preferences[FIBER_G] ?: 0.0,
                 caloriesGoal = preferences[CALORIES_GOAL] ?: CALORIES_GOAL_KCAL,
                 proteinGoal = preferences[PROTEIN_GOAL] ?: PROTEIN_GOAL_G,
-                fiberGoal = preferences[FIBER_GOAL] ?: FIBER_GOAL_G
+                fiberGoal = preferences[FIBER_GOAL] ?: FIBER_GOAL_G,
+                carbsG = preferences[CARBS_G] ?: 0.0,
+                fatG = preferences[FAT_G] ?: 0.0,
+                carbsGoal = preferences[CARBS_GOAL] ?: 0.0,
+                fatGoal = preferences[FAT_GOAL] ?: 0.0
             )
         } else {
             NutritionWidgetProgress(0.0, 0.0, 0.0,
                 preferences[CALORIES_GOAL] ?: CALORIES_GOAL_KCAL,
                 preferences[PROTEIN_GOAL] ?: PROTEIN_GOAL_G,
-                preferences[FIBER_GOAL] ?: FIBER_GOAL_G)
+                preferences[FIBER_GOAL] ?: FIBER_GOAL_G,
+                carbsGoal = preferences[CARBS_GOAL] ?: 0.0,
+                fatGoal = preferences[FAT_GOAL] ?: 0.0)
         }
     }
 
@@ -123,6 +135,16 @@ object NutritionWidgetStore {
         return recorded
     }
 
+    suspend fun updateGoals(context: Context, goals: com.uriel.healthconnecttest.sync.NutritionGoals) {
+        context.nutritionWidgetDataStore.edit { preferences ->
+            preferences[CALORIES_GOAL] = goals.caloriesKcal.toDouble()
+            preferences[PROTEIN_GOAL] = goals.proteinG.toDouble()
+            preferences[FIBER_GOAL] = goals.fiberG.toDouble()
+            preferences[CARBS_GOAL] = goals.carbsG.toDouble()
+            preferences[FAT_GOAL] = goals.fatG.toDouble()
+        }
+    }
+
     suspend fun replaceTodayMeals(
         context: Context,
         meals: Collection<ServerMeal>,
@@ -147,10 +169,14 @@ object NutritionWidgetStore {
                 preferences[CALORIES_GOAL] = day.caloriesGoal
                 preferences[PROTEIN_GOAL] = day.proteinGoal
                 preferences[FIBER_GOAL] = day.fiberGoal
+                preferences[CARBS_GOAL] = day.carbsGoal
+                preferences[FAT_GOAL] = day.fatGoal
             }
             preferences[CALORIES_KCAL] = todayMeals.sumOf(ServerMeal::caloriesKcal)
             preferences[PROTEIN_G] = todayMeals.sumOf(ServerMeal::proteinG)
             preferences[FIBER_G] = todayMeals.sumOf { it.fiberG ?: 0.0 }
+            preferences[CARBS_G] = todayMeals.sumOf { it.carbsG }
+            preferences[FAT_G] = todayMeals.sumOf { it.fatG }
             preferences[MEAL_IDS] = todayMeals.mapTo(mutableSetOf()) { "server-${it.syncId}" }
         }
         Log.i(TAG, "Widget totals reconciled from ${todayMeals.size} server meals for $today")
@@ -162,6 +188,10 @@ object NutritionWidgetStore {
     private val CALORIES_GOAL = doublePreferencesKey("calories_goal")
     private val PROTEIN_GOAL = doublePreferencesKey("protein_goal")
     private val FIBER_GOAL = doublePreferencesKey("fiber_goal")
+    private val CARBS_GOAL = doublePreferencesKey("carbs_goal")
+    private val FAT_GOAL = doublePreferencesKey("fat_goal")
+    private val CARBS_G = doublePreferencesKey("carbs_g")
+    private val FAT_G = doublePreferencesKey("fat_g")
     private val CALORIES_KCAL = doublePreferencesKey("calories_kcal")
     private val PROTEIN_G = doublePreferencesKey("protein_g")
     private val FIBER_G = doublePreferencesKey("fiber_g")

@@ -23,7 +23,7 @@ private fun amount(value: Double) = NumberFormat.getIntegerInstance().format(val
 
 @Composable
 fun NutritionDashboard(progress: NutritionWidgetProgress?, day: String, meals: List<ServerMeal>,
-    loading: Boolean, message: String, onRefresh: () -> Unit, onViewMeals: () -> Unit) {
+    loading: Boolean, message: String, onRefresh: () -> Unit, onViewMeals: () -> Unit, onEditGoals: () -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text("Daily nutrition", style = MaterialTheme.typography.headlineSmall,
@@ -55,12 +55,21 @@ fun NutritionDashboard(progress: NutritionWidgetProgress?, day: String, meals: L
     if (LocalDensity.current.fontScale >= 1.5f) {
         NutritionMacro("Protein", progress.proteinG, progress.proteinGoal, progress.proteinProgress, Modifier.fillMaxWidth())
         NutritionMacro("Fiber", progress.fiberG, progress.fiberGoal, progress.fiberProgress, Modifier.fillMaxWidth())
+        NutritionMacro("Carbs", progress.carbsG, progress.carbsGoal, progress.carbsProgress, Modifier.fillMaxWidth())
+        NutritionMacro("Fat", progress.fatG, progress.fatGoal, progress.fatProgress, Modifier.fillMaxWidth())
     } else Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         NutritionMacro("Protein", progress.proteinG, progress.proteinGoal, progress.proteinProgress, Modifier.weight(1f))
         NutritionMacro("Fiber", progress.fiberG, progress.fiberGoal, progress.fiberProgress, Modifier.weight(1f))
     }
-    if (day.isNotBlank()) Text(day, style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant)
+    if (LocalDensity.current.fontScale < 1.5f) Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        NutritionMacro("Carbs", progress.carbsG, progress.carbsGoal, progress.carbsProgress, Modifier.weight(1f))
+        NutritionMacro("Fat", progress.fatG, progress.fatGoal, progress.fatProgress, Modifier.weight(1f))
+    }
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(day, modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        TextButton(onClick = onEditGoals) { Text("Edit goals") }
+    }
     if (message.isNotBlank()) Text(message, style = MaterialTheme.typography.bodySmall)
     HorizontalDivider()
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

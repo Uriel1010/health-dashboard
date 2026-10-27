@@ -103,7 +103,9 @@ data class ServerNutritionDay(
     val resetHour: Int,
     val caloriesGoal: Double,
     val proteinGoal: Double,
-    val fiberGoal: Double
+    val fiberGoal: Double,
+    val carbsGoal: Double = 0.0,
+    val fatGoal: Double = 0.0
 )
 
 data class ParsedServerMeals(

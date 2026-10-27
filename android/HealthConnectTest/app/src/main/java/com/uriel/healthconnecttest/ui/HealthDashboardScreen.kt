@@ -674,7 +674,8 @@ fun HealthDashboardScreen(modifier: Modifier = Modifier, openFood: Boolean = fal
                 AppTab.Today -> {
                     NutritionDashboard(nutritionProgress, nutritionDateLabel, serverMeals,
                         isLoadingServerMeals, mealListMessage,
-                        onRefresh = { loadTodayMeals(true) }, onViewMeals = { selectedTab = AppTab.Food })
+                        onRefresh = { loadTodayMeals(true) }, onViewMeals = { selectedTab = AppTab.Food },
+                        onEditGoals = { selectedTab = AppTab.Settings })
                     TodayScreen(
                     availability = availability,
                     nutritionWriteGranted = nutritionWriteGranted,
@@ -734,6 +735,10 @@ fun HealthDashboardScreen(modifier: Modifier = Modifier, openFood: Boolean = fal
                     onRefreshAll = { refreshAll() }
                 )
                 AppTab.Settings -> {
+                    NutritionGoalsSettings(settings, onSaved = {
+                        coroutineScope.launch { nutritionProgress = NutritionWidgetStore.getTodayProgress(context.applicationContext) }
+                        loadTodayMeals()
+                    })
                     AppUpdateSettings(updates)
                     MealNotificationSettings(settings, repository)
                     SettingsScreen(

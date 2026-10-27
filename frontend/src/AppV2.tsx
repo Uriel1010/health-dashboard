@@ -163,7 +163,8 @@ function Dashboard({ user, onUserChange, onLogout }: { user: CurrentUser; onUser
     setLoading(true);
     setError("");
     try {
-      const deviceList = await dashboardApi.devices();
+      const [account, deviceList] = await Promise.all([authApi.me(), dashboardApi.devices()]);
+      setGoals(account.nutritionGoals);
       setDevices(deviceList);
       const target = selectedDevice || deviceList[0]?.deviceId || "";
       if (!selectedDevice && target) setSelectedDevice(target);
