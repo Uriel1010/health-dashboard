@@ -3,11 +3,12 @@ import type { FormEvent } from "react";
 
 import { accountApi, adminUsersApi, ApiError, authApi, dashboardApi } from "./apiV2";
 import type { ManualMealPayload } from "./apiV2";
-import type { CurrentUser, FoodGoals, IngestTokenStatus, NutritionTrendsResponse } from "./accountTypes";
+import type { CurrentUser, FoodGoals, IngestTokenStatus } from "./accountTypes";
+import type { NutritionStatistics } from "./statisticsTypes";
 import { HistoryTable } from "./components/HistoryTable";
 import { MealEntryModal } from "./components/MealEntryModal";
 import { MetricCard } from "./components/MetricCard";
-import { NutritionTrendChart, type MacroKey } from "./components/NutritionTrendChart";
+import { NutritionStatisticsPanel } from "./components/NutritionStatisticsPanel";
 import { RawSnapshotModal } from "./components/RawSnapshotModal";
 import { SyncStatus } from "./components/SyncStatus";
 import { UserApiGuide } from "./components/UserApiGuide";
@@ -26,12 +27,6 @@ type Card = {
   capturedAt?: string | null;
 };
 
-const macroOptions: { key: MacroKey; label: string; unit: string }[] = [
-  { key: "caloriesKcal", label: "Calories", unit: "kcal" },
-  { key: "proteinG", label: "Protein", unit: "g" },
-  { key: "carbsG", label: "Carbs", unit: "g" },
-  { key: "fatG", label: "Fat", unit: "g" },
-];
 
 export default function AppV2() {
   const [user, setUser] = useState<CurrentUser | null>(null);
@@ -145,8 +140,7 @@ function Dashboard({ user, onUserChange, onLogout }: { user: CurrentUser; onUser
   const [selectedDate, setSelectedDate] = useState(user.currentNutritionDate);
   const [meals, setMeals] = useState<Meal[]>([]);
   const [summary, setSummary] = useState<NutritionSummaryResponse | null>(null);
-  const [trends, setTrends] = useState<NutritionTrendsResponse | null>(null);
-  const [macro, setMacro] = useState<MacroKey>("caloriesKcal");
+  const [statistics, setStatistics] = useState<NutritionStatistics | null>(null);
   const [goals, setGoals] = useState<FoodGoals>(user.nutritionGoals);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -171,7 +165,7 @@ function Dashboard({ user, onUserChange, onLogout }: { user: CurrentUser; onUser
       const nutritionPromise = Promise.all([
         dashboardApi.meals(selectedDate),
         dashboardApi.dailyNutrition(selectedDate),
-        dashboardApi.nutritionTrends(selectedDate),
+        dashboardApi.nutritionStatistics(),
       ]);
       if (target) {
         const [latestResponse, recentResponse, nutrition] = await Promise.all([
@@ -184,7 +178,7 @@ function Dashboard({ user, onUserChange, onLogout }: { user: CurrentUser; onUser
         setRecent(recentResponse.snapshots);
         setMeals(nutrition[0].meals);
         setSummary(nutrition[1]);
-        setTrends(nutrition[2]);
+        setStatistics(nutrition[2]);
       } else {
         const nutrition = await nutritionPromise;
         setLatest(null);
@@ -192,7 +186,7 @@ function Dashboard({ user, onUserChange, onLogout }: { user: CurrentUser; onUser
         setRecent([]);
         setMeals(nutrition[0].meals);
         setSummary(nutrition[1]);
-        setTrends(nutrition[2]);
+        setStatistics(nutrition[2]);
       }
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) onLogout();
@@ -274,7 +268,6 @@ function Dashboard({ user, onUserChange, onLogout }: { user: CurrentUser; onUser
   }, [load]);
 
   const cards = useMemo(() => metricCards(latest), [latest]);
-  const chosenMacro = macroOptions.find((item) => item.key === macro)!;
 
   async function logout() {
     await authApi.logout().catch(() => undefined);
@@ -395,16 +388,7 @@ function Dashboard({ user, onUserChange, onLogout }: { user: CurrentUser; onUser
           </div>
         </section>
 
-        <section className="min-w-0 rounded-[1.25rem] border border-app-border bg-app-surface p-4 shadow-soft sm:rounded-[1.5rem] sm:p-5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div><p className="text-xs font-bold uppercase tracking-[0.18em] text-app-accent">30 day view</p><h2 className="mt-2 text-2xl font-semibold">Nutrition rhythm</h2><p className="mt-1 text-sm text-app-muted">Missing days count as zero in every rolling average.</p></div>
-            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-              {macroOptions.map((item) => <button key={item.key} onClick={() => setMacro(item.key)}
-                className={`min-h-11 rounded-full px-3 py-2 text-sm font-semibold ${macro === item.key ? "bg-app-accent text-white" : "border border-app-border bg-app-elevated"}`}>{item.label}</button>)}
-            </div>
-          </div>
-          <div className="mt-5">{trends ? <NutritionTrendChart points={trends.points} metric={macro} unit={chosenMacro.unit} /> : null}</div>
-        </section>
+        <NutritionStatisticsPanel data={statistics} goals={goals} />
 
         <div className="grid min-w-0 gap-4 sm:gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
           <HistoryTable snapshots={recent} expandedId={expanded} onToggle={(id) => setExpanded((current) => current === id ? null : id)} onViewRaw={openRaw} />

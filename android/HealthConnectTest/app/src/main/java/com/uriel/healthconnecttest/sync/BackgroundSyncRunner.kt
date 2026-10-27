@@ -52,6 +52,12 @@ class BackgroundSyncRunner(
         }
 
         if (settings.updateNutritionWidgetEnabled) {
+            if (settings.readToken.isNotBlank() && settings.syncServerMealsEnabled) {
+                try {
+                    NutritionStatisticsStore.save(appContext, settings, apiClient.fetchNutritionStatistics(settings))
+                } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+                catch (_: Exception) { messages += "Saved statistics retained; refresh Trends to retry" }
+            }
             NutritionWidgetsUpdater.updateAll(appContext)
             messages += "Widget refreshed"
         } else {

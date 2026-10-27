@@ -14,6 +14,7 @@ import type {
   SnapshotDetailResponse,
 } from "./accountTypes";
 import type { Meal } from "./types";
+import type { NutritionStatistics } from "./statisticsTypes";
 
 const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
 const defaultApiBaseUrl = window.location.port === "3016"
@@ -108,6 +109,7 @@ export const adminUsersApi = {
 };
 
 export const dashboardApi = {
+  nutritionStatistics: () => request<NutritionStatistics>("/api/v1/nutrition/statistics"),
   devices: () => request<Device[]>("/api/v1/devices"),
   deleteDevice: (deviceId: string) => request<void>(`/api/v1/devices/${encodeURIComponent(deviceId)}`, "DELETE"),
   latest: (deviceId: string) => request<LatestResponse>(`/api/v1/health/latest${query({ deviceId })}`),

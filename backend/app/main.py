@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 logger = logging.getLogger("health-dashboard")
 
 settings = get_settings()
-app = FastAPI(title="Health Dashboard API", version="0.1.0")
+app = FastAPI(title="Health Dashboard API", version="0.3.0")
 
 app.add_middleware(
     CORSMiddleware,

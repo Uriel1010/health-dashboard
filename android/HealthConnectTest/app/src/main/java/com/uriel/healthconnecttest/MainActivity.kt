@@ -25,7 +25,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             HealthConnectTestTheme {
-                HealthDashboardScreen(openFood = intent.getBooleanExtra("open_food", false))
+                HealthDashboardScreen(openFood = intent.getBooleanExtra("open_food", false),
+                    openTrends = intent.getBooleanExtra("open_trends", false))
             }
         }
     }

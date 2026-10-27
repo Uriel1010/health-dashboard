@@ -11,6 +11,7 @@ from app.config import Settings, get_settings
 from app.database import get_db
 from app.models import Meal, User
 from app.nutrition_days import current_nutrition_date, nutrition_date_for, nutrition_day_bounds
+from app.nutrition_statistics import build_statistics, NutritionStatisticsResponse
 from app.schemas import (
     MacroValues,
     MealCreate,
@@ -24,6 +25,17 @@ from app.schemas import (
 )
 
 router = APIRouter(prefix="/api/v1/nutrition", tags=["nutrition"])
+
+
+@router.get("/statistics", response_model=NutritionStatisticsResponse)
+def nutrition_statistics(
+    db: Session = Depends(get_db),
+    user: User = Depends(require_data_user),
+    settings: Settings = Depends(get_settings),
+) -> dict:
+    current = current_nutrition_date(user, settings.app_timezone)
+    meals = _meals_for_range(db, user, current - timedelta(days=30), current - timedelta(days=1), settings.app_timezone)
+    return build_statistics(meals, user, settings.app_timezone, current)
 
 
 @router.post("/meals", response_model=MealOut)

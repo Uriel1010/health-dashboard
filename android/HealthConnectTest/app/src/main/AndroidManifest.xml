@@ -59,6 +59,13 @@
             android:name=".widget.WidgetAccentConfigActivity"
             android:exported="true"
             android:theme="@style/Theme.HealthConnectTest" />
+        <activity android:name=".widget.NutritionAverageConfigActivity" android:exported="true" android:theme="@style/Theme.HealthConnectTest">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" /></intent-filter>
+        </activity>
+        <receiver android:name=".widget.NutritionAverageWidgetProvider" android:exported="false" android:label="@string/nutrition_average_widget_label">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/nutrition_average_widget_info" />
+        </receiver>
         <activity-alias
             android:name=".ViewPermissionUsageActivity"
             android:exported="true"

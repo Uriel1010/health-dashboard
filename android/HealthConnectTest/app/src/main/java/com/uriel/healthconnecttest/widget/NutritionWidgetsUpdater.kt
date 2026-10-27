@@ -6,5 +6,6 @@ object NutritionWidgetsUpdater {
     suspend fun updateAll(context: Context) {
         NutritionWidgetUpdater.updateAll(context)
         NutritionRingsWidgetUpdater.updateAll(context)
+        NutritionAverageWidgetProvider.updateAll(context)
     }
 }

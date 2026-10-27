@@ -1,4 +1,6 @@
 <resources>
+    <string name="nutrition_average_widget_description">Nutrition average: choose 7, 14 or 30 completed days and a nutrient</string>
+    <string name="nutrition_average_widget_label">Nutrition average</string>
     <string name="app_update_available">App update available</string>
     <string name="app_name">HealthConnectTest</string>
     <string name="nutrition_widget_description">Daily nutrition progress</string>

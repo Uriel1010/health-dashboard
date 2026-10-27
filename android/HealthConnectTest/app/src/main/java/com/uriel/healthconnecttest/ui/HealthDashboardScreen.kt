@@ -106,12 +106,13 @@ import kotlinx.coroutines.launch
 private enum class AppTab(val label: String) {
     Today("Today"),
     Food("Food"),
+    Trends("Trends"),
     Health("Health"),
     Settings("Settings")
 }
 
 @Composable
-fun HealthDashboardScreen(modifier: Modifier = Modifier, openFood: Boolean = false) {
+fun HealthDashboardScreen(modifier: Modifier = Modifier, openFood: Boolean = false, openTrends: Boolean = false) {
     val context = LocalContext.current
     val manager = remember { HealthConnectManager(context.applicationContext) }
     val repository = remember { ServerSettingsRepository(context.applicationContext) }
@@ -167,7 +168,7 @@ fun HealthDashboardScreen(modifier: Modifier = Modifier, openFood: Boolean = fal
     var mealCarbsInput by remember { mutableStateOf("") }
     var mealFatInput by remember { mutableStateOf("") }
     var mealNotesInput by remember { mutableStateOf("") }
-    var selectedTab by rememberSaveable { mutableStateOf(if (openFood) AppTab.Food else AppTab.Today) }
+    var selectedTab by rememberSaveable { mutableStateOf(if (openTrends) AppTab.Trends else if (openFood) AppTab.Food else AppTab.Today) }
     var openSettingsGroup by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(settings.serverBaseUrl, settings.deviceId, settings.deviceName, settings.allowInsecureHttpForLan) {
@@ -655,6 +656,7 @@ fun HealthDashboardScreen(modifier: Modifier = Modifier, openFood: Boolean = fal
                                 Icon(when (tab) {
                             AppTab.Today -> Icons.Default.Home
                             AppTab.Food -> Icons.AutoMirrored.Filled.List
+                            AppTab.Trends -> TrendsIcon
                             AppTab.Health -> Icons.Default.Favorite
                             AppTab.Settings -> Icons.Default.Settings
                                 }, contentDescription = tab.label)
@@ -749,10 +751,13 @@ fun HealthDashboardScreen(modifier: Modifier = Modifier, openFood: Boolean = fal
                     isRefreshing = isRefreshing,
                     onRefreshAll = { refreshAll() }
                 )
+                AppTab.Trends -> NutritionTrendsScreen(settings)
                 AppTab.Settings -> {
                     Text("Settings", style = MaterialTheme.typography.headlineMedium)
                     Text("Manage your account, daily goals and app preferences.",
                         style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    SettingsGroup("widgets", "Home screen widgets", "Progress bars, rings and custom averages",
+                        openSettingsGroup, { openSettingsGroup = it }) { WidgetGallery() }
                     SettingsGroup("updates", "App updates", updateState.release?.let { "Version ${it.versionName} available" }
                         ?: "Installed version ${updates.versionName}", openSettingsGroup, { openSettingsGroup = it },
                         attention = updateState.release != null) { AppUpdateSettings(updates) }

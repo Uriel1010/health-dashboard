@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_average_root" android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:gravity="center_vertical" android:padding="14dp"
+    android:background="@drawable/widget_nutrition_background" android:layoutDirection="ltr">
+    <TextView android:id="@+id/widget_average_title" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Calories · 7D AVG" android:textSize="11sp" android:textStyle="bold" android:textColor="@color/widget_muted" android:maxLines="2" />
+    <TextView android:id="@+id/widget_average_value" android:layout_width="match_parent" android:layout_height="32dp"
+        android:text="— kcal" android:textSize="25sp" android:textStyle="bold" android:textColor="@color/widget_foreground"
+        android:includeFontPadding="false" android:maxLines="1" android:autoSizeTextType="uniform" android:autoSizeMinTextSize="14sp" android:autoSizeMaxTextSize="25sp" />
+    <TextView android:id="@+id/widget_average_coverage" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Open Trends to sync" android:textSize="10sp" android:textColor="@color/widget_muted" />
+    <TextView android:id="@+id/widget_average_dates" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Today excluded" android:textSize="10sp" android:textColor="@color/widget_muted" />
+    <TextView android:id="@+id/widget_average_status" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Saved · Today excluded" android:textSize="9sp" android:textColor="@color/widget_muted" />
+</LinearLayout>

@@ -240,6 +240,21 @@ class HealthSyncApiClient(
         }
     }
 
+    suspend fun fetchNutritionStatistics(settings: ServerSettings): JSONObject {
+        validateReadSettings(settings)
+        return withContext(Dispatchers.IO) {
+            val request = Request.Builder().url("${settings.serverBaseUrl.trimEnd('/')}/api/v1/nutrition/statistics")
+                .header("Cookie", settings.readToken).build()
+            client.newCall(request).execute().use { response ->
+                check(response.isSuccessful) {
+                    if (response.code == 401) "Sign in again in Account & server to load trends."
+                    else "Statistics unavailable HTTP ${response.code}. Refresh to try again."
+                }
+                JSONObject(response.body?.string().orEmpty()).also { NutritionStatistics.parse(it) }
+            }
+        }
+    }
+
     suspend fun saveNutritionGoals(settings: ServerSettings, goals: NutritionGoals): NutritionGoals {
         validateReadSettings(settings)
         val payload = JSONObject().put("nutritionGoals", JSONObject()

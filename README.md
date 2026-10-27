@@ -2,7 +2,7 @@
 
 Your health metrics and nutrition journal, on your own server. A React dashboard and a native Kotlin / Jetpack Compose Android app share one account, one set of nutrition goals, and one nutrition-day boundary.
 
-[Download Android APK](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.2.2/app-release.apk) · [Production release](https://github.com/Uriel1010/health-dashboard/releases/tag/android-production-v0.2.2) · [All releases](https://github.com/Uriel1010/health-dashboard/releases) · [API documentation](docs/USER_API.md)
+[Download Android APK](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.3.0/app-release.apk) · [Production release](https://github.com/Uriel1010/health-dashboard/releases/tag/android-production-v0.3.0) · [All releases](https://github.com/Uriel1010/health-dashboard/releases) · [API documentation](docs/USER_API.md)
 
 ![Desktop health dashboard showing sample activity, heart rate, sleep, weight, and sync status](docs/images/dashboard-desktop.png)
 
@@ -16,7 +16,7 @@ Your health metrics and nutrition journal, on your own server. A React dashboard
 | Meal registration, meal lists, and deletion | Review server meals and daily nutrition progress |
 | Per-user calorie and macro goals | Calorie ring, protein/fiber progress, and recent meals |
 | Account-specific nutrition-day reset | Home-screen nutrition summary and rings widgets |
-| 7-, 14-, and 30-day nutrition averages | Optional notification for each newly discovered meal |
+| 7-, 14-, and 30-day completed-day averages | Trends screen, daily charts and configurable average widgets |
 | Multi-user accounts and per-user ingest tokens | Verified in-app release downloads and Android installer handoff |
 
 The Android app is primarily a companion to server-registered meals. Manual meal entry is available when needed. Notifications are discovered on refresh or scheduled sync; they are **not instant push notifications**.
@@ -31,9 +31,11 @@ Daily goals and meal totals follow the account's reset hour and server timezone.
 
 *Mobile web dashboard, shown with sample meals. This image is not a native Android screenshot.*
 
-![Nutrition trends chart with sample daily totals and 7-, 14-, and 30-day rolling averages](docs/images/nutrition-trends.png)
+![Nutrition trends showing sample completed-day averages, data coverage and a daily chart](docs/images/nutrition-statistics-desktop.png)
 
-*Nutrition trends use complete rolling windows; missing days count as zero.*
+*Version 0.3 uses the last 7, 14 and 30 completed nutrition days, excluding today. Averages use recorded days; missing days are not zero. Coverage is shown separately for every nutrient, including unknown fiber values. Screenshots use synthetic data.*
+
+In Android, open **Trends** for statistics and **Settings → Home screen widgets** to choose wide progress bars, compact rings or a configurable average widget. Each average widget has its own period and nutrient. See the [0.3 calculation and design specification](docs/V0.3.md).
 
 ## Run the dashboard
 
@@ -69,8 +71,8 @@ For remote access, deploy behind HTTPS, set `SESSION_COOKIE_SECURE=true`, and ex
 
 **Minimum Android version: 9 / API 28.** Health features additionally require Health Connect availability, a data-producing app, and the relevant permissions.
 
-1. Download the [production APK](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.2.2/app-release.apk).
-2. Verify its SHA-256 against the [release checksums](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.2.2/SHA256SUMS).
+1. Download the [production APK](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.3.0/app-release.apk).
+2. Verify its SHA-256 against the [release checksums](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.3.0/SHA256SUMS).
 3. Install the APK and enter your server URL and dashboard account in Settings. Configure the account ingest token for health uploads and meal writes.
 4. Grant the Health Connect permissions you want to use. Optionally enable new-meal notifications and add a nutrition widget from your launcher.
 
