@@ -59,7 +59,7 @@ private fun GoalsForm(settings: ServerSettings, onSaved: () -> Unit) {
         Text("Daily nutrition goals", style = MaterialTheme.typography.titleLarge)
         Text("Dashboard account", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (!connected) {
-            Text("Sign in to your dashboard below to edit your goals.")
+            Text("Open Account & server to sign in and edit your goals.")
         } else {
             if (loading) LinearProgressIndicator(Modifier.fillMaxWidth())
             if (serverGoals != null) NutritionGoals.LABELS.forEachIndexed { index, label ->

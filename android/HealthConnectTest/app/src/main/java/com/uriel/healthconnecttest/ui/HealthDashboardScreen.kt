@@ -168,6 +168,7 @@ fun HealthDashboardScreen(modifier: Modifier = Modifier, openFood: Boolean = fal
     var mealFatInput by remember { mutableStateOf("") }
     var mealNotesInput by remember { mutableStateOf("") }
     var selectedTab by rememberSaveable { mutableStateOf(if (openFood) AppTab.Food else AppTab.Today) }
+    var openSettingsGroup by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(settings.serverBaseUrl, settings.deviceId, settings.deviceName, settings.allowInsecureHttpForLan) {
         serverUrlInput = settings.serverBaseUrl
@@ -681,7 +682,7 @@ fun HealthDashboardScreen(modifier: Modifier = Modifier, openFood: Boolean = fal
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text("Update ${updateState.release?.versionName} available", modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                    TextButton(onClick = { selectedTab = AppTab.Settings }) { Text("View update") }
+                    TextButton(onClick = { openSettingsGroup = "updates"; selectedTab = AppTab.Settings }) { Text("View update") }
                 }
             }
             when (selectedTab) {
@@ -689,7 +690,7 @@ fun HealthDashboardScreen(modifier: Modifier = Modifier, openFood: Boolean = fal
                     NutritionDashboard(nutritionProgress, nutritionDateLabel, serverMeals,
                         isLoadingServerMeals, mealListMessage,
                         onRefresh = { loadTodayMeals(true) }, onViewMeals = { selectedTab = AppTab.Food },
-                        onEditGoals = { selectedTab = AppTab.Settings })
+                        onEditGoals = { openSettingsGroup = "goals"; selectedTab = AppTab.Settings })
                     TodayScreen(
                     availability = availability,
                     nutritionWriteGranted = nutritionWriteGranted,
@@ -749,13 +750,24 @@ fun HealthDashboardScreen(modifier: Modifier = Modifier, openFood: Boolean = fal
                     onRefreshAll = { refreshAll() }
                 )
                 AppTab.Settings -> {
+                    Text("Settings", style = MaterialTheme.typography.headlineMedium)
+                    Text("Manage your account, daily goals and app preferences.",
+                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    SettingsGroup("updates", "App updates", updateState.release?.let { "Version ${it.versionName} available" }
+                        ?: "Installed version ${updates.versionName}", openSettingsGroup, { openSettingsGroup = it },
+                        attention = updateState.release != null) { AppUpdateSettings(updates) }
+                    SettingsGroup("goals", "Daily nutrition goals", "Calories, protein, carbs, fat and fiber",
+                        openSettingsGroup, { openSettingsGroup = it }) {
                     NutritionGoalsSettings(settings, onSaved = {
                         coroutineScope.launch { nutritionProgress = NutritionWidgetStore.getTodayProgress(context.applicationContext) }
                         loadTodayMeals()
                     })
-                    AppUpdateSettings(updates)
-                    MealNotificationSettings(settings, repository)
+                    }
+                    SettingsGroup("notifications", "Notifications", if (settings.mealNotificationsEnabled) "New meal alerts on" else "New meal alerts off",
+                        openSettingsGroup, { openSettingsGroup = it }) { MealNotificationSettings(settings, repository) }
                     SettingsScreen(
+                    openGroup = openSettingsGroup,
+                    onGroupChange = { openSettingsGroup = it },
                     availability = availability,
                     grantedCount = grantedPermissions.intersect(manager.allRequiredPermissions).size,
                     totalCount = manager.allRequiredPermissions.size,
@@ -991,6 +1003,8 @@ private fun HealthScreen(
 
 @Composable
 private fun SettingsScreen(
+    openGroup: String,
+    onGroupChange: (String) -> Unit,
     availability: HealthConnectAvailability,
     grantedCount: Int,
     totalCount: Int,
@@ -1035,7 +1049,8 @@ private fun SettingsScreen(
     allowHttp: Boolean,
     onAllowHttpChange: (Boolean) -> Unit
 ) {
-    Text(text = "Settings", style = MaterialTheme.typography.headlineMedium)
+    SettingsGroup("status", "Sync status", if (lastSyncError.isNotBlank()) "Last sync needs attention" else "Recent activity and connection details",
+        openGroup, onGroupChange, attention = lastSyncError.isNotBlank()) {
     DashboardStatus(
         availability = availability,
         grantedCount = grantedCount,
@@ -1051,6 +1066,9 @@ private fun SettingsScreen(
         backgroundSyncScheduled = backgroundSyncScheduled,
         error = error
     )
+    }
+    SettingsGroup("permissions", "Health Connect permissions", "$grantedCount of $totalCount permissions granted",
+        openGroup, onGroupChange, attention = missingPermissions.isNotEmpty()) {
     PermissionControlsCard(
         canUseHealthConnect = canUseHealthConnect,
         missingPermissions = missingPermissions,
@@ -1061,11 +1079,17 @@ private fun SettingsScreen(
         onRequestBackgroundRead = onRequestBackgroundRead,
         onRequestNutritionPermission = onRequestNutritionPermission
     )
+    }
+    SettingsGroup("sync", "Background sync", if (settings.backgroundSyncEnabled) "On · Schedule and data sources" else "Off · Schedule and data sources",
+        openGroup, onGroupChange) {
     SyncScheduleCard(
         settings = settings,
         onSettingsChange = onSyncScheduleChange,
         onRunBackgroundSyncNow = onRunBackgroundSyncNow
     )
+    }
+    SettingsGroup("account", "Account & server", if (settings.readToken.isNotBlank()) "Dashboard connected · Connection settings" else "Sign in to your dashboard",
+        openGroup, onGroupChange) {
     SyncSettingsCard(
         serverUrl = serverUrl,
         onServerUrlChange = onServerUrlChange,
@@ -1089,6 +1113,7 @@ private fun SettingsScreen(
         allowHttp = allowHttp,
         onAllowHttpChange = onAllowHttpChange
     )
+    }
 }
 
 @Composable
