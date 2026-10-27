@@ -1,41 +1,140 @@
 # Health Dashboard + Android Companion
 
-A self-hosted health and nutrition dashboard with a native Kotlin / Jetpack Compose Android companion. Meals are registered on the server; the phone shows nutrition progress, syncs health metrics, and provides home-screen widgets and optional new-meal notifications.
+Your health metrics and nutrition journal, on your own server. A React dashboard and a native Kotlin / Jetpack Compose Android app share one account, one set of nutrition goals, and one nutrition-day boundary.
 
-## Project layout
+[Download Android APK](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.2.1/app-release.apk) · [Production release](https://github.com/Uriel1010/health-dashboard/releases/tag/android-production-v0.2.1) · [All releases](https://github.com/Uriel1010/health-dashboard/releases) · [API documentation](docs/USER_API.md)
 
-- `backend/`: FastAPI, PostgreSQL, account authentication and nutrition APIs.
-- `frontend/`: React / TypeScript dashboard.
-- `android/HealthConnectTest/`: Android app, minimum API 28.
-- `docs/`: API, account administration, backup and development notes.
+![Desktop health dashboard showing sample activity, heart rate, sleep, weight, and sync status](docs/images/dashboard-desktop.png)
+
+*Actual dashboard UI with synthetic demo data. Screenshots contain no personal health records, credentials, or real device identifiers.*
+
+## What it does
+
+| Web dashboard | Android companion |
+| --- | --- |
+| Health snapshots, device history, and sync freshness | Read supported health metrics from Health Connect |
+| Meal registration, meal lists, and deletion | Review server meals and daily nutrition progress |
+| Per-user calorie and macro goals | Calorie ring, protein/fiber progress, and recent meals |
+| Account-specific nutrition-day reset | Home-screen nutrition summary and rings widgets |
+| 7-, 14-, and 30-day nutrition averages | Optional notification for each newly discovered meal |
+| Multi-user accounts and per-user ingest tokens | Verified in-app release downloads and Android installer handoff |
+
+The Android app is primarily a companion to server-registered meals. Manual meal entry is available when needed. Notifications are discovered on refresh or scheduled sync; they are **not instant push notifications**.
+
+## Nutrition, at a glance
+
+Daily goals and meal totals follow the account's reset hour and server timezone. For example, with a 04:00 reset, a meal at 02:00 belongs to the previous nutrition day.
+
+<p align="center">
+  <img src="docs/images/dashboard-mobile.png" alt="Mobile web dashboard with sample daily macro totals and three meal entries" width="320">
+</p>
+
+*Mobile web dashboard, shown with sample meals. This image is not a native Android screenshot.*
+
+![Nutrition trends chart with sample daily totals and 7-, 14-, and 30-day rolling averages](docs/images/nutrition-trends.png)
+
+*Nutrition trends use complete rolling windows; missing days count as zero.*
 
 ## Run the dashboard
 
-1. Copy `.env.example` to `.env` and replace the database password and token placeholders. Keep the database password in `DATABASE_URL` consistent.
-2. Run `docker compose up -d --build`.
-3. Open `http://localhost:3016`; the API is available on port 8015.
-4. Follow `docs/MULTI_USER_UPGRADE.md` for initial administrator/account setup.
-
-Use HTTPS, secure cookies and explicit allowed origins for remote deployment. Example credentials are placeholders, not deployment credentials. The optional tunnel profile requires your own Cloudflare token.
-
-## Android
-
-Open `android/HealthConnectTest` in Android Studio, configure your Android SDK locally, and run `./gradlew assembleDebug testDebugUnitTest` (Windows: `gradlew.bat`). Configure your server URL and account in the app; grant Health Connect and notification permissions as needed. Local SDK paths, account sessions and tokens are not included.
-
-Production Android releases provide an optimized, non-debuggable APK signed with the project's private production identity, plus an AAB for possible future store submission. See [production signing](docs/PRODUCTION_SIGNING.md). Development prereleases remain debug-signed and use a separate update channel. Android cannot update between these signing identities in place; plan a manual migration before uninstalling an existing app. No Google Play submission or approval is implied.
-
-Notifications use scheduled polling, not server push. Nutrition totals and goals follow the server timezone and account reset hour. Health data availability depends on source apps and Health Connect permissions.
-
-## Verify
+Requirements: Docker with Docker Compose, and a private location for deployment configuration and backups.
 
 ```sh
-cd frontend && npm ci && npm run build
-cd ../backend && python -m unittest discover -s tests -v
-cd ../android/HealthConnectTest && ./gradlew assembleDebug testDebugUnitTest
+git clone https://github.com/Uriel1010/health-dashboard.git
+cd health-dashboard
+cp .env.example .env
 ```
 
-## Releases
+1. Edit `.env`. Set a unique database password and long random ingest token. Keep the password in `DATABASE_URL` consistent with `POSTGRES_PASSWORD`.
+2. Start the stack:
 
-Dashboard, Android development, and Android production use separate tags: `dashboard-vX.Y.Z`, `android-vX.Y.Z`, and `android-production-vX.Y.Z`. Android releases include update metadata and checksums. Deployment configuration, private signing material and user health data are never release assets.
+   ```sh
+   docker compose up -d --build
+   ```
 
-See `SECURITY.md` before deployment. This project is not a medical device.
+3. Create the initial administrator using the interactive management command:
+
+   ```sh
+   docker compose run --rm api python -m app.manage
+   ```
+
+4. Open **http://localhost:3016** and sign in. The API is exposed on port **8015** by default.
+5. Generate your account's ingest token from **Account & ingestion**, then configure your Android app.
+
+For existing deployments, follow the [multi-user upgrade instructions](docs/MULTI_USER_UPGRADE.md) before applying migrations. Use [backup and restore](docs/BACKUP_RESTORE.md) instructions to protect your database.
+
+For remote access, deploy behind HTTPS, set `SESSION_COOKIE_SECURE=true`, and explicitly configure your allowed origins. The optional Cloudflare tunnel profile requires your own tunnel token. Never commit `.env`.
+
+## Install Android
+
+**Minimum Android version: 9 / API 28.** Health features additionally require Health Connect availability, a data-producing app, and the relevant permissions.
+
+1. Download the [production APK](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.2.1/app-release.apk).
+2. Verify its SHA-256 against the [release checksums](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.2.1/SHA256SUMS).
+3. Install the APK and enter your server URL and dashboard account in Settings. Configure the account ingest token for health uploads and meal writes.
+4. Grant the Health Connect permissions you want to use. Optionally enable new-meal notifications and add a nutrition widget from your launcher.
+
+Health Connect and source-app permissions control which metrics are available. Writing a meal to Health Connect does not guarantee another health app will immediately display it.
+
+### Updates and signing
+
+The app checks GitHub releases when opened and from **Settings → App updates**. Downloads are verified by SHA-256, package ID, numeric version code, and signing certificate before Android's installer is opened. Installation requires user approval.
+
+| Distribution | Release tags | Intended use |
+| --- | --- | --- |
+| Android production | `android-production-vX.Y.Z` | Optimized, non-debuggable APK with a private production signing identity |
+| Android development | `android-vX.Y.Z` | Debug-signed prereleases for testing |
+| Dashboard | `dashboard-vX.Y.Z` | Dashboard source and frontend build |
+
+**Moving from development to production is not an in-place update.** The two distributions have different signing certificates. Do not uninstall your existing app without planning for local settings and app-owned Health Connect data. Server meal records remain on the server.
+
+The production release also includes a signed AAB for possible future store submission. This project has not been submitted to or approved by Google Play. See [production signing](docs/PRODUCTION_SIGNING.md) and [publishing Android updates](docs/ANDROID_RELEASES.md).
+
+## Project layout
+
+```text
+health-dashboard/
+├── backend/                    FastAPI, PostgreSQL, accounts, nutrition APIs
+├── frontend/                   React, TypeScript, Vite dashboard
+├── android/HealthConnectTest/   Kotlin / Jetpack Compose Android app
+├── docs/                       Setup, API, security, release guides, screenshots
+└── scripts/                    Backup, restore, and release helpers
+```
+
+## Development and checks
+
+Frontend, from `frontend/`:
+
+```sh
+npm ci
+npm run build
+```
+
+Backend, in a Python environment with `backend/requirements.txt` installed, from `backend/`:
+
+```sh
+python -m unittest discover -s tests -v
+```
+
+Android, with the Android SDK configured locally, from `android/HealthConnectTest/`:
+
+```sh
+./gradlew assembleDebug testDebugUnitTest
+# Windows PowerShell: .\gradlew.bat assembleDebug testDebugUnitTest
+```
+
+Production builds require an external private signing configuration. Signing keys, passwords, SDK paths, database exports, and health records do not belong in Git.
+
+## Documentation
+
+- [User API guide](docs/USER_API.md)
+- [API manual](docs/API_MANUAL.md)
+- [Administrator API](docs/ADMIN_API.md)
+- [Accounts and multi-user setup](docs/MULTI_USER_UPGRADE.md)
+- [Database backup and restore](docs/BACKUP_RESTORE.md)
+- [Android release workflow](docs/ANDROID_RELEASES.md)
+- [Production signing and migration](docs/PRODUCTION_SIGNING.md)
+- [Screenshot provenance](docs/images/README.md)
+- [Security and privacy](SECURITY.md)
+
+This project is not a medical device. Automated secret scanning and verified release checksums do not replace a security review of your deployment.
