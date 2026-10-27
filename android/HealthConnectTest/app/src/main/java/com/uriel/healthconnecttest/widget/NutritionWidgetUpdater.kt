@@ -42,15 +42,17 @@ object NutritionWidgetUpdater {
             "Rendering nutrition widget values calories=${progress.caloriesKcal}/${progress.caloriesProgress}% " +
                 "protein=${progress.proteinG}/${progress.proteinProgress}% fiber=${progress.fiberG}/${progress.fiberProgress}%"
         )
-        val views = RemoteViews(context.packageName, R.layout.widget_nutrition_summary)
+        val views = RemoteViews(context.packageName, R.layout.widget_nutrition_progress)
         views.setTextViewText(R.id.widget_calories_value, "${progress.caloriesKcal.toInt()}")
         views.setTextViewText(R.id.widget_calories_label, "of ${progress.caloriesGoal.toInt()} kcal")
         views.setContentDescription(R.id.widget_root,
             "Nutrition today: ${progress.caloriesKcal.toInt()} calories, ${progress.proteinG.toInt()} grams protein, ${progress.fiberG.toInt()} grams fiber. Open Health Connect.")
-        views.setTextViewText(R.id.widget_protein_value, "${progress.proteinG.toInt()} g")
-        views.setTextViewText(R.id.widget_fiber_value, "${progress.fiberG.toInt()} g")
-        views.setTextViewText(R.id.widget_protein_goal, "of ${progress.proteinGoal.toInt()} g")
-        views.setTextViewText(R.id.widget_fiber_goal, "of ${progress.fiberGoal.toInt()} g")
+        views.setTextViewText(R.id.widget_protein_value, "${progress.proteinG.toInt()} / ${progress.proteinGoal.toInt()} g")
+        views.setTextViewText(R.id.widget_fiber_value, "${progress.fiberG.toInt()} / ${progress.fiberGoal.toInt()} g")
+        views.setInt(R.id.widget_accent_bar, "setBackgroundColor", accentColor)
+        views.setContentDescription(R.id.widget_calories_progress, "Calories: ${progress.caloriesProgress}% of daily goal")
+        views.setContentDescription(R.id.widget_protein_progress, "Protein: ${progress.proteinProgress}% of daily goal")
+        views.setContentDescription(R.id.widget_fiber_progress, "Fiber: ${progress.fiberProgress}% of daily goal")
         if (android.os.Build.VERSION.SDK_INT >= 31) {
             views.setColorStateList(R.id.widget_calories_progress, "setProgressTintList", android.content.res.ColorStateList.valueOf(accentColor))
         }
