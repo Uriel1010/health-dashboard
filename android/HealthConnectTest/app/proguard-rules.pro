@@ -1,4 +1,11 @@
 # Add project specific ProGuard rules here.
+# Room instantiates WorkManager's generated database using a no-argument
+# constructor through reflection. Keep that constructor explicitly: retaining
+# the class name alone is insufficient with the current R8 optimizer.
+-keepclassmembers class androidx.work.impl.WorkDatabase_Impl {
+    public <init>();
+}
+
 # You can control the set of applied configuration files using the
 # proguardFiles setting in build.gradle.
 #
