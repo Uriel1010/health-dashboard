@@ -14,6 +14,7 @@ from app.crud import check_database
 from app.database import get_db
 from app.routers import account, admin, devices, health, ingest, nutrition_user, users
 from app.schemas import HealthResponse
+from app.routers import food_bridge
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 logger = logging.getLogger("health-dashboard")
@@ -56,6 +57,7 @@ def service_health(db: Session = Depends(get_db)) -> HealthResponse:
 app.include_router(account.router)
 app.include_router(ingest.router)
 app.include_router(nutrition_user.router)
+app.include_router(food_bridge.router)
 app.include_router(health.router)
 app.include_router(devices.router)
 app.include_router(admin.router)

@@ -25,6 +25,7 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     must_change_password: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     nutrition_reset_hour: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    nutrition_timezone: Mapped[str | None] = mapped_column(String(128), nullable=True)
     nutrition_goal_calories_kcal: Mapped[int] = mapped_column(Integer, nullable=False, default=2200)
     nutrition_goal_protein_g: Mapped[int] = mapped_column(Integer, nullable=False, default=140)
     nutrition_goal_carbs_g: Mapped[int] = mapped_column(Integer, nullable=False, default=250)

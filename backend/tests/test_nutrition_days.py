@@ -42,6 +42,22 @@ class NutritionDayTests(unittest.TestCase):
         now = datetime(2026, 8, 20, 2, 0, tzinfo=ZoneInfo("Asia/Jerusalem"))
         self.assertEqual(current_nutrition_date(self.user, "Asia/Jerusalem", now), date(2026, 8, 19))
 
+    def test_personal_timezone_overrides_utc_without_changing_other_users(self) -> None:
+        value = datetime(2026, 8, 20, 4, 30, tzinfo=ZoneInfo("Asia/Jerusalem"))
+        self.user.nutrition_timezone = "Asia/Jerusalem"
+        self.assertEqual(nutrition_date_for(value, self.user, "UTC"), date(2026, 8, 20))
+        other = User(nutrition_reset_hour=4, nutrition_timezone=None)
+        self.assertEqual(nutrition_date_for(value, other, "UTC"), date(2026, 8, 19))
+        start, end = nutrition_day_bounds(date(2026, 8, 20), self.user, "UTC")
+        self.assertEqual(start.astimezone(ZoneInfo("Asia/Jerusalem")).hour, 4)
+        self.assertEqual(end.astimezone(ZoneInfo("Asia/Jerusalem")).hour, 4)
+
+    def test_personal_day_bounds_follow_both_dst_transitions(self) -> None:
+        self.user.nutrition_timezone = "Asia/Jerusalem"
+        for day, hours in [(date(2026, 3, 26), 23), (date(2026, 10, 24), 25)]:
+            start, end = nutrition_day_bounds(day, self.user, "UTC")
+            self.assertEqual((end-start).total_seconds()/3600, hours)
+
 
 if __name__ == "__main__":
     unittest.main()

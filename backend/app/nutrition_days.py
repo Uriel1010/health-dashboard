@@ -4,8 +4,12 @@ from zoneinfo import ZoneInfo
 from app.models import User
 
 
+def nutrition_timezone_for(user: User, fallback: str) -> str:
+    return getattr(user, "nutrition_timezone", None) or fallback
+
+
 def nutrition_date_for(value: datetime, user: User, timezone_name: str) -> date:
-    local = value.astimezone(ZoneInfo(timezone_name))
+    local = value.astimezone(ZoneInfo(nutrition_timezone_for(user, timezone_name)))
     assigned = local.date()
     if local.hour < user.nutrition_reset_hour:
         assigned -= timedelta(days=1)
@@ -13,7 +17,7 @@ def nutrition_date_for(value: datetime, user: User, timezone_name: str) -> date:
 
 
 def nutrition_day_bounds(day: date, user: User, timezone_name: str) -> tuple[datetime, datetime]:
-    zone = ZoneInfo(timezone_name)
+    zone = ZoneInfo(nutrition_timezone_for(user, timezone_name))
     start_local = datetime.combine(day, time(hour=user.nutrition_reset_hour), tzinfo=zone)
     end_local = datetime.combine(day + timedelta(days=1), time(hour=user.nutrition_reset_hour), tzinfo=zone)
     return start_local.astimezone(timezone.utc), end_local.astimezone(timezone.utc)

@@ -18,7 +18,7 @@ from app.auth import (
 from app.config import Settings, get_settings
 from app.database import get_db
 from app.models import BrowserSession, IngestToken, User
-from app.nutrition_days import current_nutrition_date
+from app.nutrition_days import current_nutrition_date, nutrition_timezone_for
 from app.schemas import (
     IngestTokenCreated,
     IngestTokenStatus,
@@ -48,7 +48,7 @@ def user_out(user: User, settings: Settings) -> UserOut:
             fatG=user.nutrition_goal_fat_g,
             fiberG=user.nutrition_goal_fiber_g,
         ),
-        serverTimezone=settings.app_timezone,
+        serverTimezone=nutrition_timezone_for(user, settings.app_timezone),
         currentNutritionDate=current_nutrition_date(user, settings.app_timezone),
     )
 

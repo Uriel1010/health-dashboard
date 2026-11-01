@@ -10,7 +10,7 @@ from app.auth import require_data_user, require_meal_write_user
 from app.config import Settings, get_settings
 from app.database import get_db
 from app.models import Meal, User
-from app.nutrition_days import current_nutrition_date, nutrition_date_for, nutrition_day_bounds
+from app.nutrition_days import current_nutrition_date, nutrition_date_for, nutrition_day_bounds, nutrition_timezone_for
 from app.nutrition_statistics import build_statistics, NutritionStatisticsResponse
 from app.schemas import (
     MacroValues,
@@ -35,7 +35,7 @@ def nutrition_statistics(
 ) -> dict:
     current = current_nutrition_date(user, settings.app_timezone)
     meals = _meals_for_range(db, user, current - timedelta(days=30), current - timedelta(days=1), settings.app_timezone)
-    return build_statistics(meals, user, settings.app_timezone, current)
+    return build_statistics(meals, user, nutrition_timezone_for(user, settings.app_timezone), current)
 
 
 @router.post("/meals", response_model=MealOut)
@@ -166,7 +166,7 @@ def nutrition_trends(
     return NutritionTrendsResponse(
         fromDate=visible_start,
         toDate=end_date,
-        serverTimezone=settings.app_timezone,
+        serverTimezone=nutrition_timezone_for(user, settings.app_timezone),
         nutritionResetHour=user.nutrition_reset_hour,
         points=points,
     )
