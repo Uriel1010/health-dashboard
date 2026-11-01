@@ -11,6 +11,7 @@ from app.config import Settings, get_settings
 from app.database import get_db
 from app.models import Meal, User
 from app.nutrition_days import current_nutrition_date, nutrition_date_for, nutrition_day_bounds, nutrition_timezone_for
+from app.nutrition_streak import current_streak_days
 from app.nutrition_statistics import build_statistics, NutritionStatisticsResponse
 from app.schemas import (
     MacroValues,
@@ -169,6 +170,7 @@ def nutrition_trends(
         serverTimezone=nutrition_timezone_for(user, settings.app_timezone),
         nutritionResetHour=user.nutrition_reset_hour,
         points=points,
+        currentStreakDays=current_streak_days(db, user, settings.app_timezone, end_date),
     )
 
 

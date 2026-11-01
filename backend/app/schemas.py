@@ -296,3 +296,4 @@ class NutritionTrendsResponse(BaseModel):
     serverTimezone: str
     nutritionResetHour: int
     points: list[NutritionTrendPoint]
+    currentStreakDays: int = Field(ge=0)
