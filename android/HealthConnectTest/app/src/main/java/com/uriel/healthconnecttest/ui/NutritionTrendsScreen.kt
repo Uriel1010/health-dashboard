@@ -42,7 +42,21 @@ internal val TrendsIcon = ImageVector.Builder("Trends", 24.dp, 24.dp, 24f, 24f).
 
 @Composable
 fun NutritionTrendsScreen(settings: ServerSettings) {
-    key(settings.serverBaseUrl, settings.readToken) { AccountTrends(settings) }
+    var category by rememberSaveable { mutableStateOf("Nutrition") }
+    Text("Trends", style = MaterialTheme.typography.headlineSmall)
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        listOf("Nutrition", "Activity", "Weight").forEach { item ->
+            Surface(onClick = { category = item }, shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+                color = if (category == item) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.weight(1f)) {
+                Box(Modifier.padding(vertical = 10.dp), contentAlignment = Alignment.Center) {
+                    Text(item, style = MaterialTheme.typography.labelLarge, color = if (category == item) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimaryContainer)
+                }
+            }
+        }
+    }
+    if (category == "Nutrition") key(settings.serverBaseUrl, settings.readToken) { AccountTrends(settings) }
+    else HealthHistoryTrends(category)
 }
 
 @Composable
@@ -75,65 +89,60 @@ private fun AccountTrends(settings: ServerSettings) {
         finally { loading = false }
     }
     LaunchedEffect(Unit) { refresh() }
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Text("Nutrition trends", style = MaterialTheme.typography.headlineMedium)
-            Text("The bigger picture", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyMedium)
-        }
-        IconButton(onClick = { scope.launch { refresh() } }, enabled = !loading) {
-            Icon(Icons.Default.Refresh, contentDescription = "Refresh statistics")
-        }
-    }
-    Text("7, 14 and 30 completed nutrition days. Today is always excluded.", style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant)
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        listOf(7, 14, 30).forEach { days -> FilterChip(selected = period == days, onClick = { period = days }, label = { Text("$days days") }) }
-    }
     if (loading) LinearProgressIndicator(Modifier.fillMaxWidth())
-    if (notice.isNotBlank()) Text(notice, color = MaterialTheme.colorScheme.error)
-    if (cached) Text("Saved data · Refresh to get the latest completed days", style = MaterialTheme.typography.labelMedium)
-    val data = statistics ?: return
-    val window = data.windows.first { it.days == period }
-    val dateFormat = DateTimeFormatter.ofPattern("d MMM yyyy")
-    Text("${window.from.format(dateFormat)} – ${window.to.format(dateFormat)}", style = MaterialTheme.typography.titleMedium)
-    Text("${window.loggedDays} of $period days logged", color = MaterialTheme.colorScheme.onSurfaceVariant)
-    NutritionMetric.entries.forEach { item ->
-        val average = window.values[item]
-        val goal = goals?.let { item.goal(it) }
-        OutlinedCard(onClick = { metricName = item.name }, modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.outlinedCardColors(containerColor = if (item == metric) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface)) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(item.label, style = MaterialTheme.typography.labelLarge)
-                Text("${statisticAmount(average)} ${item.unit}/day", style = MaterialTheme.typography.headlineSmall)
-                Text("${window.coverage[item]} days with data" + (goal?.let { " · Current goal $it ${item.unit}" } ?: ""),
-                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    if (notice.isNotBlank()) Text(notice, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+    if (cached) Text("Saved data · Refresh to update", style = MaterialTheme.typography.bodySmall)
+    val data = statistics
+    val window = data?.windows?.firstOrNull { it.days == period }
+    val points = data?.points?.takeLast(period).orEmpty()
+    val goal = goals?.let { metric.goal(it).toDouble() } ?: 0.0
+    ReferenceCard {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("Daily averages", style = MaterialTheme.typography.titleMedium)
+                Text("Last $period days", style = MaterialTheme.typography.bodyMedium)
+            }
+            IconButton(onClick = { period = when (period) { 7 -> 30; 14 -> 7; else -> 14 } }) { Icon(CompanionIcons.Back, "Previous average period", Modifier.size(18.dp)) }
+            IconButton(onClick = { period = when (period) { 7 -> 14; 14 -> 30; else -> 7 } }) { Icon(CompanionIcons.Chevron, "Next average period", Modifier.size(18.dp)) }
+        }
+        if (window == null) {
+            Text(if (loading) "Loading your statistics…" else "No statistics loaded yet.", style = MaterialTheme.typography.bodyMedium)
+            OutlinedButton(onClick = { scope.launch { refresh() } }, enabled = !loading) { Text("Refresh statistics") }
+        } else {
+            ReferenceHistoryChart(points.map { it.date to it.values[metric] }, metric.unit, goal)
+            Text("■  Average ${metric.label.lowercase()} (${statisticAmount(window.values[metric])} ${metric.unit})", style = MaterialTheme.typography.bodySmall)
+            if (goal > 0) Text("– –  Current ${metric.label.lowercase()} goal (${goal.toInt()} ${metric.unit})", style = MaterialTheme.typography.bodySmall)
+            Text("${window.from.format(DateTimeFormatter.ofPattern("MMM d"))} – ${window.to.format(DateTimeFormatter.ofPattern("MMM d"))} · Today excluded", style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+    if (window != null) ReferenceCard {
+        Text("Averages (last $period days)", style = MaterialTheme.typography.titleMedium)
+        NutritionMetric.entries.forEachIndexed { index, item ->
+            if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Surface(onClick = { metricName = item.name }, color = if (item == metric) MaterialTheme.colorScheme.primaryContainer.copy(alpha = .35f) else MaterialTheme.colorScheme.surface,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(6.dp)) {
+                Row(Modifier.fillMaxWidth().padding(vertical = 7.dp, horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(if (item == NutritionMetric.Calories) CompanionIcons.Flame else CompanionIcons.Food, null, Modifier.size(17.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(item.label, style = MaterialTheme.typography.bodyMedium)
+                        Text("${window.coverage[item]} days with data", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Text("${statisticAmount(window.values[item])} ${item.unit} / day", style = MaterialTheme.typography.bodyMedium)
+                }
             }
         }
-    }
-    val points = data.points.takeLast(period)
-    val goal = goals?.let { metric.goal(it).toDouble() } ?: 0.0
-    val accent = MaterialTheme.colorScheme.primary
-    val track = MaterialTheme.colorScheme.outlineVariant
-    val maximum = maxOf(points.maxOfOrNull { it.values[metric] ?: 0.0 } ?: 0.0, goal, 1.0) * 1.12
-    Text("${metric.label} by day", style = MaterialTheme.typography.titleMedium)
-    Canvas(Modifier.fillMaxWidth().height(160.dp).semantics {
-        contentDescription = "${metric.label} over $period days. Missing days are gaps. Daily values are available below."
-    }) {
-        val width = size.width / period
-        if (goal > 0) drawLine(track, Offset(0f, size.height * (1 - goal / maximum).toFloat()),
-            Offset(size.width, size.height * (1 - goal / maximum).toFloat()), 2.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 8f)))
-        points.forEachIndexed { index, point ->
-            val value = point.values[metric]
-            val height = if (value == null) 3.dp.toPx() else maxOf((value / maximum * size.height).toFloat(), 2.dp.toPx())
-            drawRoundRect(if (value == null) track else accent, Offset(index * width + 2.dp.toPx(), size.height - height),
-                Size(maxOf(width - 4.dp.toPx(), 1f), height), CornerRadius(3.dp.toPx()))
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("${window.loggedDays}/$period days logged", Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+            TextButton(onClick = { scope.launch { refresh() } }, enabled = !loading) { Text("Refresh") }
         }
     }
-    Text("Dashed line: current goal · Muted marks: no data", style = MaterialTheme.typography.bodySmall)
-    TextButton(onClick = { showDays = !showDays }) { Text(if (showDays) "Hide daily values" else "Show daily values") }
-    if (showDays) points.asReversed().forEach { point ->
-        Text("${point.date.format(dateFormat)} · ${statisticAmount(point.values[metric])} ${metric.unit}", style = MaterialTheme.typography.bodyMedium)
+    if (window != null) {
+        TextButton(onClick = { showDays = !showDays }) { Text(if (showDays) "Hide daily values" else "Show daily values") }
+        if (showDays) points.asReversed().forEach { point ->
+            Text("${point.date} · ${statisticAmount(point.values[metric])} ${metric.unit}", style = MaterialTheme.typography.bodyMedium)
+        }
+        Text("Missing days are not zero. Unknown nutrient values are excluded separately. Logged days may be incomplete. Goals are current, not historical.\nDay boundary: ${data!!.resetHour.toString().padStart(2, '0')}:00 · ${data.timezone}",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
-    Text("Averages use recorded days, not missing days. Logged days may still be partial; unknown nutrient values are excluded separately. Goals are current, not historical.\nDay boundary: ${data.resetHour.toString().padStart(2, '0')}:00 · ${data.timezone}",
-        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }

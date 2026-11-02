@@ -15,8 +15,8 @@ fun AppUpdateSettings(updates: AppUpdates) {
     val state by updates.state.collectAsState()
     val scope = rememberCoroutineScope()
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("App updates", style = MaterialTheme.typography.titleLarge)
-        Text("Health Companion ${updates.versionName} | ${if (updates.production) "Production" else "Development"}", style = MaterialTheme.typography.bodyMedium,
+        Text("Version ${state.release?.versionName ?: updates.versionName}", style = MaterialTheme.typography.titleMedium)
+        Text("Installed ${updates.versionName} · ${if (updates.production) "Production" else "Development"}", style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(state.message, style = MaterialTheme.typography.bodyMedium)
         if (state.checking) LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -25,13 +25,12 @@ fun AppUpdateSettings(updates: AppUpdates) {
             Text("${(state.progress * 100).toInt()}%", style = MaterialTheme.typography.labelMedium)
         }
         state.release?.let { release ->
-            Text("What's new in ${release.versionName}", style = MaterialTheme.typography.titleSmall)
             Text(release.notes.take(1800), style = MaterialTheme.typography.bodySmall)
             if (!state.downloading && !state.checking) {
                 Button(onClick = {
                     if (state.ready != null) updates.install() else scope.launch { updates.download() }
                 }, modifier = Modifier.fillMaxWidth()) {
-                    Text(if (state.ready != null) "Install update" else "Download update")
+                    Text(if (state.ready != null) "Install update" else "Update now")
                 }
             }
         }

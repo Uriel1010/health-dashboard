@@ -107,6 +107,41 @@ class HealthConnectManager(private val context: Context) {
         return result[StepsRecord.COUNT_TOTAL] ?: 0L
     }
 
+    suspend fun readCompletedActivityDays(days: Int): List<CompletedActivityDay> {
+        require(days in listOf(7, 14, 30))
+        val permissions = getGrantedPermissions()
+        require(permissions.contains(permissionByMetric.getValue(HealthMetric.Steps)) &&
+            permissions.contains(permissionByMetric.getValue(HealthMetric.ActiveCalories))) {
+            "Grant steps and active-calorie permissions in Settings → Health Connect."
+        }
+        val end = LocalDate.now().atStartOfDay()
+        val start = LocalDate.now().minusDays(days.toLong()).atStartOfDay()
+        return client.aggregateGroupByPeriod(androidx.health.connect.client.request.AggregateGroupByPeriodRequest(
+            metrics = setOf(StepsRecord.COUNT_TOTAL, ActiveCaloriesBurnedRecord.ACTIVE_CALORIES_TOTAL),
+            timeRangeFilter = TimeRangeFilter.between(start, end), timeRangeSlicer = java.time.Period.ofDays(1)
+        )).map { item -> CompletedActivityDay(item.startTime.toLocalDate(),
+            item.result[StepsRecord.COUNT_TOTAL]?.toDouble(), item.result[ActiveCaloriesBurnedRecord.ACTIVE_CALORIES_TOTAL]?.inKilocalories) }
+    }
+
+    suspend fun readCompletedWeightDays(days: Int): List<Pair<LocalDate, Double>> {
+        require(days in listOf(7, 14, 30))
+        require(getGrantedPermissions().contains(permissionByMetric.getValue(HealthMetric.Weight))) {
+            "Grant weight permission in Settings → Health Connect."
+        }
+        val zone = ZoneId.systemDefault()
+        val start = LocalDate.now().minusDays(days.toLong()).atStartOfDay(zone).toInstant()
+        val end = LocalDate.now().atStartOfDay(zone).toInstant()
+        val records = mutableListOf<Pair<LocalDate, Double>>()
+        var token: String? = null
+        do {
+            val page = client.readRecords(ReadRecordsRequest(recordType = WeightRecord::class,
+                timeRangeFilter = TimeRangeFilter.between(start, end), ascendingOrder = true, pageSize = 1000, pageToken = token))
+            records += page.records.map { it.time.atZone(zone).toLocalDate() to it.weight.inKilograms }
+            token = page.pageToken
+        } while (token != null)
+        return records.groupBy { it.first }.map { it.value.last() }
+    }
+
     suspend fun readTodayDistanceKilometers(): Double? {
         val result = client.aggregate(
             AggregateRequest(

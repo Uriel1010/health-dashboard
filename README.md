@@ -2,7 +2,7 @@
 
 Your health metrics and nutrition journal, on your own server. A React dashboard and a native Kotlin / Jetpack Compose Android app share one account, one set of nutrition goals, and one nutrition-day boundary.
 
-[Download Android APK](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.3.1/app-release.apk) · [Production release](https://github.com/Uriel1010/health-dashboard/releases/tag/android-production-v0.3.1) · [All releases](https://github.com/Uriel1010/health-dashboard/releases) · [API documentation](docs/USER_API.md)
+[Download Android APK](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.4.0/app-release.apk) · [Production release](https://github.com/Uriel1010/health-dashboard/releases/tag/android-production-v0.4.0) · [All releases](https://github.com/Uriel1010/health-dashboard/releases) · [API documentation](docs/USER_API.md)
 
 ![Desktop health dashboard showing sample activity, heart rate, sleep, weight, and sync status](docs/images/dashboard-desktop.png)
 
@@ -35,7 +35,24 @@ Daily goals and meal totals follow the account's reset hour and server timezone.
 
 *Version 0.3 uses the last 7, 14 and 30 completed nutrition days, excluding today. Averages use recorded days; missing days are not zero. Coverage is shown separately for every nutrient, including unknown fiber values. Screenshots use synthetic data.*
 
-In Android, open **Trends** for statistics and **Settings → Home screen widgets** to choose wide progress bars, compact rings or a configurable average widget. Each average widget has its own period and nutrient. See the [0.3 calculation and design specification](docs/V0.3.md).
+In Android, open **Trends** for nutrition, activity and weight history. Open **Settings → App preferences → Home screen widgets** to choose progress bars, rings or an average widget. Each average widget has its own period and nutrient. See the [nutrition calculation specification](docs/V0.3.md).
+
+## Android 0.4 — Light and dark
+
+The native app follows the supplied Health Companion reference with compact nutrition progress, meal menus, full-screen registration, daily-average charts, health readings and focused Settings sections. Appearance can follow the system or be set explicitly to Light or Dark.
+
+<p align="center">
+  <img src="docs/images/android-0.4-today-light.png" alt="Native Android Today screen with synthetic nutrition totals in light mode" width="220">
+  <img src="docs/images/android-0.4-trends-light.png" alt="Native Android daily averages with synthetic data in light mode" width="220">
+  <img src="docs/images/android-0.4-settings-light.png" alt="Native Android settings in light mode" width="220">
+</p>
+<p align="center">
+  <img src="docs/images/android-0.4-today-dark.png" alt="Native Android Today screen with synthetic nutrition totals in dark mode" width="220">
+  <img src="docs/images/android-0.4-trends-dark.png" alt="Native Android daily averages with synthetic data in dark mode" width="220">
+  <img src="docs/images/android-0.4-settings-dark.png" alt="Native Android settings in dark mode" width="220">
+</p>
+
+*Actual emulator screenshots with a synthetic localhost account. Meal thumbnails are illustrations, not photographs of real meals. Activity and weight history require the corresponding Health Connect permissions. See the [reference implementation and test instructions](android/HealthConnectTest/docs/REFERENCE_REDESIGN.md).*
 
 ## Run the dashboard
 
@@ -71,8 +88,8 @@ For remote access, deploy behind HTTPS, set `SESSION_COOKIE_SECURE=true`, and ex
 
 **Minimum Android version: 9 / API 28.** Health features additionally require Health Connect availability, a data-producing app, and the relevant permissions.
 
-1. Download the [production APK](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.3.1/app-release.apk).
-2. Verify its SHA-256 against the [release checksums](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.3.1/SHA256SUMS).
+1. Download the [production APK](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.4.0/app-release.apk).
+2. Verify its SHA-256 against the [release checksums](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.4.0/SHA256SUMS).
 3. Install the APK and enter your server URL and dashboard account in Settings. Configure the account ingest token for health uploads and meal writes.
 4. Grant the Health Connect permissions you want to use. Optionally enable new-meal notifications and add a nutrition widget from your launcher.
 
