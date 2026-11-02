@@ -22,6 +22,8 @@ enum class MetricStatus {
     Error
 }
 
+data class CompletedActivityDay(val date: java.time.LocalDate, val steps: Double?, val activeCalories: Double?)
+
 data class MetricCardState(
     val metric: HealthMetric,
     val value: String,

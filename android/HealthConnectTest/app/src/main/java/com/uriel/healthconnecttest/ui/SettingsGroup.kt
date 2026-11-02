@@ -1,6 +1,7 @@
 package com.uriel.healthconnecttest.ui
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -25,29 +26,42 @@ internal fun SettingsGroup(
 ) {
     val expanded = openGroup == id
     val savedContent = rememberSaveableStateHolder()
-    OutlinedCard(Modifier.fillMaxWidth()) {
+    val update = id == "updates"
+    val fill = if (update) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
+    Surface(Modifier.fillMaxWidth(), color = fill, shape = RoundedCornerShape(if (update) 12.dp else 0.dp)) {
+      Column {
         Surface(
             onClick = { onGroupChange(if (expanded) "" else id) },
-            color = MaterialTheme.colorScheme.surface,
+            color = fill,
             modifier = Modifier.fillMaxWidth().semantics {
                 stateDescription = if (expanded) "Expanded" else "Collapsed"
             }
         ) {
             Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Icon(when (id) {
+                    "updates" -> CompanionIcons.Update
+                    "account" -> CompanionIcons.User
+                    "permissions" -> CompanionIcons.Heart
+                    "goals" -> CompanionIcons.Target
+                    "preferences" -> CompanionIcons.Settings
+                    else -> CompanionIcons.Info
+                }, null, Modifier.size(24.dp), tint = if (update) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(title, style = MaterialTheme.typography.titleMedium)
                     Text(summary, style = MaterialTheme.typography.bodySmall,
-                        color = if (attention) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                        color = if (id == "account" && summary == "Connected") NutritionGreen else if (attention) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                if (attention) Badge()
-                Icon(if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                    contentDescription = null)
+                if (attention) Badge(containerColor = MaterialTheme.colorScheme.error)
+                Icon(if (expanded) Icons.Default.KeyboardArrowUp else if (update) Icons.Default.KeyboardArrowDown else CompanionIcons.Chevron,
+                    contentDescription = null, modifier = Modifier.size(18.dp))
             }
         }
         if (expanded) savedContent.SaveableStateProvider(id) {
             Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)) { content() }
         }
+        if (!update) HorizontalDivider(Modifier.padding(start = 52.dp), color = MaterialTheme.colorScheme.outlineVariant)
+      }
     }
 }

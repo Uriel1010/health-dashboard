@@ -18,8 +18,8 @@ android {
         applicationId = "com.uriel.healthconnecttest"
         minSdk = 28
         targetSdk = 36
-        versionCode = 9
-        versionName = "0.3.1"
+        versionCode = 10
+        versionName = "0.4.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

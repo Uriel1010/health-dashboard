@@ -29,6 +29,15 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.FilterChip
@@ -69,6 +78,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.res.stringResource
 import com.uriel.healthconnecttest.R
 import androidx.compose.ui.tooling.preview.Preview
@@ -155,6 +167,8 @@ fun HealthDashboardScreen(modifier: Modifier = Modifier, openFood: Boolean = fal
     var nutritionProgress by remember { mutableStateOf<com.uriel.healthconnecttest.widget.NutritionWidgetProgress?>(null) }
     var nutritionDateLabel by remember { mutableStateOf("") }
     var isLoadingServerMeals by remember { mutableStateOf(false) }
+    var nutritionLoaded by remember { mutableStateOf(false) }
+    LaunchedEffect(settings.serverBaseUrl, settings.readToken) { nutritionLoaded = false }
     var mealListMessage by remember { mutableStateOf("") }
     var pendingMealDelete by remember { mutableStateOf<ServerMeal?>(null) }
     var deletingMealId by remember { mutableStateOf<Long?>(null) }
@@ -170,6 +184,7 @@ fun HealthDashboardScreen(modifier: Modifier = Modifier, openFood: Boolean = fal
     var mealNotesInput by remember { mutableStateOf("") }
     var selectedTab by rememberSaveable { mutableStateOf(if (openTrends) AppTab.Trends else if (openFood) AppTab.Food else AppTab.Today) }
     var openSettingsGroup by rememberSaveable { mutableStateOf("") }
+    var showDayInfo by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(settings.serverBaseUrl, settings.deviceId, settings.deviceName, settings.allowInsecureHttpForLan) {
         serverUrlInput = settings.serverBaseUrl
@@ -534,6 +549,8 @@ fun HealthDashboardScreen(modifier: Modifier = Modifier, openFood: Boolean = fal
                     }
                     NutritionWidgetStore.replaceTodayMeals(context.applicationContext, result.meals, result.nutritionDay)
                     nutritionProgress = NutritionWidgetStore.getTodayProgress(context.applicationContext)
+                    nutritionLoaded = true
+                    mealListMessage = ""
                     nutritionDateLabel = result.nutritionDay?.let { "${it.date} | ${it.timezone} | resets ${it.resetHour}:00" }.orEmpty()
                     NutritionWidgetsUpdater.updateAll(context.applicationContext)
                     if (showResultMessage) {
@@ -631,41 +648,38 @@ fun HealthDashboardScreen(modifier: Modifier = Modifier, openFood: Boolean = fal
         modifier = modifier
             .fillMaxSize(),
         topBar = {
-            Surface(color = MaterialTheme.colorScheme.surface) {
-                Column(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 20.dp, vertical = 12.dp)) {
+            Surface(color = MaterialTheme.colorScheme.background) {
+                Column(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp)) {
                     Text("Health Companion", style = MaterialTheme.typography.titleMedium)
-                    Text(LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, d MMMM")),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (selectedTab == AppTab.Today || selectedTab == AppTab.Food) {
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Text(LocalDate.now().format(DateTimeFormatter.ofPattern("EEE, MMM d, yyyy")), Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+                            IconButton(onClick = { showDayInfo = true }, modifier = Modifier.size(42.dp)) { Icon(CompanionIcons.Calendar, "Nutrition day information", Modifier.size(20.dp)) }
+                        }
+                    }
                 }
             }
         },
         bottomBar = {
-            NavigationBar {
-                AppTab.entries.forEach { tab ->
-                    val hasUpdate = tab == AppTab.Settings && updateState.release != null
-                    val updateDescription = stringResource(R.string.app_update_available)
-                    NavigationBarItem(
-                        modifier = Modifier.semantics {
-                            if (hasUpdate) stateDescription = updateDescription
-                        },
-                        selected = selectedTab == tab,
-                        onClick = { selectedTab = tab },
-                        icon = {
-                            BadgedBox(badge = { if (hasUpdate) Badge() }) {
-                                Icon(when (tab) {
-                            AppTab.Today -> Icons.Default.Home
-                            AppTab.Food -> Icons.AutoMirrored.Filled.List
-                            AppTab.Trends -> TrendsIcon
-                            AppTab.Health -> Icons.Default.Favorite
-                            AppTab.Settings -> Icons.Default.Settings
-                                }, contentDescription = tab.label)
+            Surface(color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp) {
+                Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 8.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    AppTab.entries.forEach { tab ->
+                        val active = selectedTab == tab
+                        val hasUpdate = tab == AppTab.Settings && updateState.release != null
+                        val color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        Surface(onClick = { selectedTab = tab }, shape = RoundedCornerShape(12.dp),
+                            color = if (active) MaterialTheme.colorScheme.primaryContainer else androidx.compose.ui.graphics.Color.Transparent,
+                            modifier = Modifier.weight(1f).semantics { role = Role.Tab; selected = active; contentDescription = tab.label; if (hasUpdate) stateDescription = "App update available" }) {
+                            Column(Modifier.heightIn(min = 56.dp).padding(vertical = 7.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                BadgedBox(badge = { if (hasUpdate) Badge(containerColor = MaterialTheme.colorScheme.error) }) {
+                                    Icon(when (tab) { AppTab.Today -> CompanionIcons.Home; AppTab.Food -> CompanionIcons.Food;
+                                        AppTab.Trends -> CompanionIcons.Chart; AppTab.Health -> CompanionIcons.Heart; AppTab.Settings -> CompanionIcons.Settings },
+                                        null, Modifier.size(22.dp), tint = color)
+                                }
+                                if (LocalDensity.current.fontScale < 1.5f) Text(tab.label, style = MaterialTheme.typography.labelSmall, color = color, maxLines = 1)
                             }
-                        },
-                        label = if (LocalDensity.current.fontScale < 1.5f) {
-                            { Text(tab.label) }
-                        } else null
-                    )
+                        }
+                    }
                 }
             }
         }
@@ -677,19 +691,24 @@ fun HealthDashboardScreen(modifier: Modifier = Modifier, openFood: Boolean = fal
                 .fillMaxSize()
                 .imePadding()
                 .verticalScroll(remember(selectedTab) { androidx.compose.foundation.ScrollState(0) })
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(if (selectedTab == AppTab.Settings) 0.dp else 12.dp)
         ) {
             if (updateState.release != null && selectedTab != AppTab.Settings) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Update ${updateState.release?.versionName} available", modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                    TextButton(onClick = { openSettingsGroup = "updates"; selectedTab = AppTab.Settings }) { Text("View update") }
+                Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(12.dp)) {
+                    Row(Modifier.fillMaxWidth().padding(start = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(CompanionIcons.Update, null, Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
+                        Column(Modifier.weight(1f).padding(horizontal = 10.dp, vertical = 10.dp)) {
+                            Text("App update available", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                            Text("Version ${updateState.release?.versionName} is ready to install.", style = MaterialTheme.typography.bodySmall)
+                        }
+                        TextButton(onClick = { openSettingsGroup = "updates"; selectedTab = AppTab.Settings }) { Text("View update", style = MaterialTheme.typography.labelMedium) }
+                    }
                 }
             }
             when (selectedTab) {
                 AppTab.Today -> {
-                    NutritionDashboard(nutritionProgress, nutritionDateLabel, serverMeals,
+                    NutritionDashboard(if (nutritionLoaded) nutritionProgress else null, nutritionDateLabel, serverMeals,
                         isLoadingServerMeals, mealListMessage,
                         onRefresh = { loadTodayMeals(true) }, onViewMeals = { selectedTab = AppTab.Food },
                         onEditGoals = { openSettingsGroup = "goals"; selectedTab = AppTab.Settings })
@@ -710,6 +729,7 @@ fun HealthDashboardScreen(modifier: Modifier = Modifier, openFood: Boolean = fal
                 )
                 }
                 AppTab.Food -> FoodScreen(
+                    mealRevision = mealListRevision,
                     canUseHealthConnect = canUseHealthConnect,
                     nutritionWriteGranted = nutritionWriteGranted,
                     onRequestNutritionPermission = {
@@ -754,25 +774,34 @@ fun HealthDashboardScreen(modifier: Modifier = Modifier, openFood: Boolean = fal
                 AppTab.Trends -> NutritionTrendsScreen(settings)
                 AppTab.Settings -> {
                     Text("Settings", style = MaterialTheme.typography.headlineMedium)
-                    Text("Manage your account, daily goals and app preferences.",
-                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    SettingsGroup("widgets", "Home screen widgets", "Progress bars, rings and custom averages",
-                        openSettingsGroup, { openSettingsGroup = it }) { WidgetGallery() }
+                    Spacer(Modifier.height(12.dp))
                     SettingsGroup("updates", "App updates", updateState.release?.let { "Version ${it.versionName} available" }
                         ?: "Installed version ${updates.versionName}", openSettingsGroup, { openSettingsGroup = it },
                         attention = updateState.release != null) { AppUpdateSettings(updates) }
-                    SettingsGroup("goals", "Daily nutrition goals", "Calories, protein, carbs, fat and fiber",
-                        openSettingsGroup, { openSettingsGroup = it }) {
-                    NutritionGoalsSettings(settings, onSaved = {
-                        coroutineScope.launch { nutritionProgress = NutritionWidgetStore.getTodayProgress(context.applicationContext) }
-                        loadTodayMeals()
-                    })
-                    }
-                    SettingsGroup("notifications", "Notifications", if (settings.mealNotificationsEnabled) "New meal alerts on" else "New meal alerts off",
-                        openSettingsGroup, { openSettingsGroup = it }) { MealNotificationSettings(settings, repository) }
                     SettingsScreen(
                     openGroup = openSettingsGroup,
                     onGroupChange = { openSettingsGroup = it },
+                    settingsExtras = {
+                        SettingsGroup("goals", "Daily nutrition goals", "Calories, protein, carbs, fat, fiber", openSettingsGroup, { openSettingsGroup = it }) {
+                            NutritionGoalsSettings(settings, onSaved = {
+                                coroutineScope.launch { nutritionProgress = NutritionWidgetStore.getTodayProgress(context.applicationContext) }
+                                loadTodayMeals()
+                            })
+                        }
+                        SettingsGroup("preferences", "App preferences", "Appearance, widgets and notifications", openSettingsGroup, { openSettingsGroup = it }) {
+                            AppearanceSettings()
+                            HorizontalDivider()
+                            MealNotificationSettings(settings, repository)
+                            HorizontalDivider()
+                            WidgetGallery()
+                        }
+                        SettingsGroup("about", "About", "App version, privacy, acknowledgments", openSettingsGroup, { openSettingsGroup = it }) {
+                            Text("Health Companion ${updates.versionName}", style = MaterialTheme.typography.titleMedium)
+                            Text(if (updates.production) "Production release" else "Development release")
+                            Text("Your meals and goals are stored on your dashboard server. Health readings are accessed only with the permissions you grant. Background sync and meal notifications can be configured in this app.", style = MaterialTheme.typography.bodyMedium)
+                            Text("Built with Kotlin, Jetpack Compose, Android Health Connect, WorkManager and OkHttp.", style = MaterialTheme.typography.bodySmall)
+                        }
+                    },
                     availability = availability,
                     grantedCount = grantedPermissions.intersect(manager.allRequiredPermissions).size,
                     totalCount = manager.allRequiredPermissions.size,
@@ -827,14 +856,19 @@ fun HealthDashboardScreen(modifier: Modifier = Modifier, openFood: Boolean = fal
     }
 
     }
+    if (showDayInfo) AlertDialog(onDismissRequest = { showDayInfo = false },
+        icon = { Icon(CompanionIcons.Calendar, null) }, title = { Text("Your nutrition day") },
+        text = { Text(nutritionDateLabel.ifBlank { "Today's meals follow your account's timezone and nutrition-day reset hour. Refresh nutrition after signing in to see the exact day boundary." }) },
+        confirmButton = { TextButton(onClick = { showDayInfo = false }) { Text("Done") } })
     pendingMealDelete?.let { meal ->
         AlertDialog(
             onDismissRequest = { pendingMealDelete = null },
             title = { Text("Delete meal?") },
-            text = { Text("${meal.title} will be removed from the dashboard and today's totals.") },
+            icon = { Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error) },
+            text = { Text("Delete “${meal.title}”?\n\nThis will remove the meal from the server. It will not remove any previously written Health Connect record.") },
             confirmButton = {
-                TextButton(onClick = { deletePendingMeal() }) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                Button(onClick = { deletePendingMeal() }, colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) {
+                    Text("Delete")
                 }
             },
             dismissButton = {
@@ -862,48 +896,26 @@ private fun TodayScreen(
     onTestConnection: () -> Unit,
     onSyncNow: () -> Unit
 ) {
-    Text(text = "Activity & health", style = MaterialTheme.typography.titleLarge)
-    TodaySummaryCard(cards = cards)
-    var showSyncDetails by rememberSaveable { mutableStateOf(false) }
-    TextButton(onClick = { showSyncDetails = !showSyncDetails }) {
-        Text(if (showSyncDetails) "Hide sync details" else "Sync details")
-    }
-    if (showSyncDetails) {
-    DailyStatusCard(
-        availability = availability,
-        nutritionWriteGranted = nutritionWriteGranted,
-        lastSyncStatus = lastSyncStatus,
-        lastSyncTime = lastSyncTime,
-        lastManualSyncTime = lastManualSyncTime,
-        lastSyncError = lastSyncError
-    )
-    TodayActionsCard(
-        syncMessage = syncMessage,
-        isSyncing = isSyncing,
-        onTestConnection = onTestConnection,
-        onSyncNow = onSyncNow
-    )
-    }
-    if (showSyncDetails && (mealMessage.isNotBlank() || serverMealSyncMessage.isNotBlank())) {
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(text = "Recent food sync", style = MaterialTheme.typography.titleMedium)
-                if (mealMessage.isNotBlank()) {
-                    Text(text = mealMessage)
-                }
-                if (serverMealSyncMessage.isNotBlank()) {
-                    Text(text = serverMealSyncMessage)
-                }
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    ReferenceCard {
+        Surface(onClick = { expanded = !expanded }, color = MaterialTheme.colorScheme.surface) {
+            Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("Synchronization details", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+                Icon(if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, contentDescription = if (expanded) "Hide sync details" else "Show sync details")
             }
+        }
+        if (expanded) {
+            DailyStatusCard(availability, nutritionWriteGranted, lastSyncStatus, lastSyncTime, lastManualSyncTime, lastSyncError)
+            TodayActionsCard(syncMessage, isSyncing, onTestConnection, onSyncNow)
+            if (mealMessage.isNotBlank()) Text(mealMessage, style = MaterialTheme.typography.bodySmall)
+            if (serverMealSyncMessage.isNotBlank()) Text(serverMealSyncMessage, style = MaterialTheme.typography.bodySmall)
         }
     }
 }
 
 @Composable
 private fun FoodScreen(
+    mealRevision: Int,
     canUseHealthConnect: Boolean,
     nutritionWriteGranted: Boolean,
     onRequestNutritionPermission: () -> Unit,
@@ -938,52 +950,50 @@ private fun FoodScreen(
     onDeleteMeal: (ServerMeal) -> Unit
 ) {
     var showMealForm by rememberSaveable { mutableStateOf(false) }
-    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(text = "Food diary", style = MaterialTheme.typography.headlineSmall)
-        Button(onClick = { showMealForm = !showMealForm }) {
-            Icon(Icons.Default.Add, contentDescription = null)
-            Spacer(Modifier.width(6.dp))
-            Text(if (showMealForm) "Close" else "Add meal")
+    var openedRevision by rememberSaveable { mutableIntStateOf(mealRevision) }
+    LaunchedEffect(mealRevision) { if (showMealForm && openedRevision != mealRevision) showMealForm = false }
+    TodayMealsCard(serverMeals.sortedBy { runCatching { OffsetDateTime.parse(it.eatenAt).toInstant() }.getOrDefault(Instant.EPOCH) }, isLoadingServerMeals, deletingMealId, mealListMessage, serverMealSyncMessage,
+        isSyncingServerMeals, onRefreshMeals, onSyncServerMeals, onDeleteMeal)
+    FilledTonalButton(onClick = { openedRevision = mealRevision; showMealForm = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) {
+        Icon(Icons.Default.Add, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("Register meal manually")
+    }
+    ReferenceCard {
+        Surface(onClick = onSyncServerMeals, color = MaterialTheme.colorScheme.surface, enabled = !isSyncingServerMeals) {
+            Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Icon(CompanionIcons.Cloud, null, Modifier.size(30.dp), tint = MaterialTheme.colorScheme.primary)
+                Column(Modifier.weight(1f)) {
+                    Text(if (isSyncingServerMeals) "Synchronizing meals…" else "Synchronize meals to Health Connect", style = MaterialTheme.typography.titleSmall)
+                    Text("Write this nutrition day's server meals to Health Connect", style = MaterialTheme.typography.bodySmall)
+                }
+                Icon(CompanionIcons.Chevron, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+            }
+        }
+        if (serverMealSyncMessage.isNotBlank()) Text(serverMealSyncMessage, style = MaterialTheme.typography.bodySmall)
+        if (!nutritionWriteGranted) TextButton(onClick = onRequestNutritionPermission, enabled = canUseHealthConnect) { Text("Grant nutrition write permission") }
+    }
+    if (showMealForm) androidx.compose.ui.window.Dialog(onDismissRequest = { if (!isSubmittingMeal) showMealForm = false },
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+        ConfigureDialogSystemBars()
+        Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
+            Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { showMealForm = false }, enabled = !isSubmittingMeal) { Icon(CompanionIcons.Back, "Back to meals") }
+                Text("Register meal", style = MaterialTheme.typography.titleMedium)
+            }
+        }, bottomBar = {
+            Surface(color = MaterialTheme.colorScheme.surface) {
+                Row(Modifier.fillMaxWidth().navigationBarsPadding().imePadding().padding(16.dp), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = { showMealForm = false }, enabled = !isSubmittingMeal) { Text("Cancel") }
+                    Spacer(Modifier.width(12.dp))
+                    Button(onClick = onSubmitMeal, enabled = !isSubmittingMeal, shape = RoundedCornerShape(8.dp)) { Text(if (isSubmittingMeal) "Registering…" else "Register meal") }
+                }
+            }
+        }) { padding ->
+            Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                FoodDiaryCard(mealType, onMealTypeChange, eatenAt, onEatenAtChange, title, onTitleChange, calories, onCaloriesChange,
+                    protein, onProteinChange, carbs, onCarbsChange, fat, onFatChange, notes, onNotesChange, mealMessage, lastSubmittedMeal, isSubmittingMeal, onSubmitMeal)
+            }
         }
     }
-    if (!nutritionWriteGranted) NutritionPermissionCard(
-        canUseHealthConnect = canUseHealthConnect,
-        nutritionWriteGranted = nutritionWriteGranted,
-        onRequestNutritionPermission = onRequestNutritionPermission
-    )
-    if (showMealForm) FoodDiaryCard(
-        mealType = mealType,
-        onMealTypeChange = onMealTypeChange,
-        eatenAt = eatenAt,
-        onEatenAtChange = onEatenAtChange,
-        title = title,
-        onTitleChange = onTitleChange,
-        calories = calories,
-        onCaloriesChange = onCaloriesChange,
-        protein = protein,
-        onProteinChange = onProteinChange,
-        carbs = carbs,
-        onCarbsChange = onCarbsChange,
-        fat = fat,
-        onFatChange = onFatChange,
-        notes = notes,
-        onNotesChange = onNotesChange,
-        message = mealMessage,
-        lastSubmittedMeal = lastSubmittedMeal,
-        isSubmitting = isSubmittingMeal,
-        onSubmit = onSubmitMeal
-    )
-    TodayMealsCard(
-        meals = serverMeals,
-        isLoading = isLoadingServerMeals,
-        deletingMealId = deletingMealId,
-        message = mealListMessage,
-        syncMessage = serverMealSyncMessage,
-        isSyncing = isSyncingServerMeals,
-        onRefresh = onRefreshMeals,
-        onSync = onSyncServerMeals,
-        onDelete = onDeleteMeal
-    )
 }
 
 @Composable
@@ -993,23 +1003,24 @@ private fun HealthScreen(
     isRefreshing: Boolean,
     onRefreshAll: () -> Unit
 ) {
-    Text(text = "Health readings", style = MaterialTheme.typography.headlineSmall)
-    OutlinedButton(
-        onClick = onRefreshAll,
-        enabled = canUseHealthConnect && !isRefreshing
-    ) {
-        Text(if (isRefreshing) "Refreshing" else "Refresh all")
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text("Health", style = MaterialTheme.typography.headlineSmall)
+            Text("Today (from Health Connect)", style = MaterialTheme.typography.bodyMedium)
+        }
+        IconButton(onClick = onRefreshAll, enabled = canUseHealthConnect && !isRefreshing) { Icon(Icons.Default.Refresh, "Refresh all health readings") }
     }
-    Spacer(modifier = Modifier.height(4.dp))
-    HealthMetric.entries.forEach { metric ->
-        MetricCard(cards[metric] ?: permissionMissingCard(metric))
-    }
+    if (isRefreshing) LinearProgressIndicator(Modifier.fillMaxWidth())
+    val ordered = listOf(HealthMetric.Steps, HealthMetric.ActiveCalories, HealthMetric.Distance, HealthMetric.LatestHeartRate,
+        HealthMetric.TotalCalories, HealthMetric.RestingHeartRate, HealthMetric.Sleep, HealthMetric.Exercise, HealthMetric.Weight)
+    ordered.forEach { MetricCard(cards[it] ?: permissionMissingCard(it)) }
 }
 
 @Composable
 private fun SettingsScreen(
     openGroup: String,
     onGroupChange: (String) -> Unit,
+    settingsExtras: @Composable () -> Unit,
     availability: HealthConnectAvailability,
     grantedCount: Int,
     totalCount: Int,
@@ -1054,46 +1065,7 @@ private fun SettingsScreen(
     allowHttp: Boolean,
     onAllowHttpChange: (Boolean) -> Unit
 ) {
-    SettingsGroup("status", "Sync status", if (lastSyncError.isNotBlank()) "Last sync needs attention" else "Recent activity and connection details",
-        openGroup, onGroupChange, attention = lastSyncError.isNotBlank()) {
-    DashboardStatus(
-        availability = availability,
-        grantedCount = grantedCount,
-        totalCount = totalCount,
-        lastRefreshTime = lastRefreshTime,
-        backgroundReadAvailable = backgroundReadAvailable,
-        backgroundReadGranted = backgroundReadGranted,
-        lastSyncStatus = lastSyncStatus,
-        lastSyncTime = lastSyncTime,
-        lastManualSyncTime = lastManualSyncTime,
-        lastBackgroundSyncTime = lastBackgroundSyncTime,
-        lastSyncError = lastSyncError,
-        backgroundSyncScheduled = backgroundSyncScheduled,
-        error = error
-    )
-    }
-    SettingsGroup("permissions", "Health Connect permissions", "$grantedCount of $totalCount permissions granted",
-        openGroup, onGroupChange, attention = missingPermissions.isNotEmpty()) {
-    PermissionControlsCard(
-        canUseHealthConnect = canUseHealthConnect,
-        missingPermissions = missingPermissions,
-        backgroundReadAvailable = backgroundReadAvailable,
-        backgroundReadGranted = backgroundReadGranted,
-        nutritionWriteGranted = nutritionWriteGranted,
-        onRequestMissingPermissions = onRequestMissingPermissions,
-        onRequestBackgroundRead = onRequestBackgroundRead,
-        onRequestNutritionPermission = onRequestNutritionPermission
-    )
-    }
-    SettingsGroup("sync", "Background sync", if (settings.backgroundSyncEnabled) "On · Schedule and data sources" else "Off · Schedule and data sources",
-        openGroup, onGroupChange) {
-    SyncScheduleCard(
-        settings = settings,
-        onSettingsChange = onSyncScheduleChange,
-        onRunBackgroundSyncNow = onRunBackgroundSyncNow
-    )
-    }
-    SettingsGroup("account", "Account & server", if (settings.readToken.isNotBlank()) "Dashboard connected · Connection settings" else "Sign in to your dashboard",
+    SettingsGroup("account", "Account & server", if (settings.readToken.isNotBlank()) "Connected" else "Sign in to your dashboard",
         openGroup, onGroupChange) {
     SyncSettingsCard(
         serverUrl = serverUrl,
@@ -1119,6 +1091,42 @@ private fun SettingsScreen(
         onAllowHttpChange = onAllowHttpChange
     )
     }
+    SettingsGroup("permissions", "Health Connect", "Permissions and data access", openGroup, onGroupChange) {
+    PermissionControlsCard(
+        canUseHealthConnect = canUseHealthConnect,
+        missingPermissions = missingPermissions,
+        backgroundReadAvailable = backgroundReadAvailable,
+        backgroundReadGranted = backgroundReadGranted,
+        nutritionWriteGranted = nutritionWriteGranted,
+        onRequestMissingPermissions = onRequestMissingPermissions,
+        onRequestBackgroundRead = onRequestBackgroundRead,
+        onRequestNutritionPermission = onRequestNutritionPermission
+    )
+
+    SyncScheduleCard(
+        settings = settings,
+        onSettingsChange = onSyncScheduleChange,
+        onRunBackgroundSyncNow = onRunBackgroundSyncNow
+    )
+
+    DashboardStatus(
+        availability = availability,
+        grantedCount = grantedCount,
+        totalCount = totalCount,
+        lastRefreshTime = lastRefreshTime,
+        backgroundReadAvailable = backgroundReadAvailable,
+        backgroundReadGranted = backgroundReadGranted,
+        lastSyncStatus = lastSyncStatus,
+        lastSyncTime = lastSyncTime,
+        lastManualSyncTime = lastManualSyncTime,
+        lastBackgroundSyncTime = lastBackgroundSyncTime,
+        lastSyncError = lastSyncError,
+        backgroundSyncScheduled = backgroundSyncScheduled,
+        error = error
+    )
+
+    }
+    settingsExtras()
 }
 
 @Composable
@@ -1130,29 +1138,13 @@ private fun DailyStatusCard(
     lastManualSyncTime: String,
     lastSyncError: String
 ) {
-    val availabilityText = when (availability) {
-        HealthConnectAvailability.Available -> "Health Connect available"
-        HealthConnectAvailability.NotInstalledOrUpdateRequired ->
-            "Health Connect not installed or needs update"
-        HealthConnectAvailability.Unsupported -> "Health Connect unsupported"
-    }
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Text(text = "Status", style = MaterialTheme.typography.titleMedium)
-            Text(text = availabilityText)
-            Text(text = "Nutrition write: ${if (nutritionWriteGranted) "Granted" else "Missing"}")
-            Text(text = if (lastSyncStatus.contains("Sync succeeded")) "Up to date" else lastSyncStatus,
-                style = MaterialTheme.typography.bodyMedium)
-            Text(text = "Last sync: ${formatStoredTime(lastSyncTime)}")
-            Text(text = "Last manual sync: ${formatStoredTime(lastManualSyncTime)}")
-            if (lastSyncError.isNotBlank() && !lastSyncError.contains("failed=0")) {
-                Text(text = "Last sync error: $lastSyncError")
-            }
-        }
-    }
+    val available = availability == HealthConnectAvailability.Available
+    SyncDetailRow("Health Connect", if (available) "Available" else "Unavailable", available)
+    SyncDetailRow("Nutrition write permission", if (nutritionWriteGranted) "Granted" else "Missing", nutritionWriteGranted)
+    SyncDetailRow("Latest synchronization", lastSyncStatus, !lastSyncStatus.contains("failed", true))
+    SyncDetailRow("Last synchronization time", formatStoredTime(lastSyncTime))
+    SyncDetailRow("Last manual synchronization", formatStoredTime(lastManualSyncTime))
+    SyncDetailRow("Latest error", if (lastSyncError.isBlank() || lastSyncError.contains("failed=0")) "None" else lastSyncError)
 }
 
 @Composable
@@ -1162,25 +1154,14 @@ private fun TodayActionsCard(
     onTestConnection: () -> Unit,
     onSyncNow: () -> Unit
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Text(text = "Server sync", style = MaterialTheme.typography.titleMedium)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = onTestConnection) {
-                    Text("Test connection")
-                }
-                Button(onClick = onSyncNow, enabled = !isSyncing) {
-                    Text(if (isSyncing) "Syncing" else "Sync now")
-                }
-            }
-            if (syncMessage.isNotBlank()) {
-                Text(text = syncMessage)
-            }
-        }
+    OutlinedButton(onClick = onTestConnection, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)) {
+        Text("Test server connection")
     }
+    Button(onClick = onSyncNow, enabled = !isSyncing, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)) {
+        Icon(Icons.Default.Refresh, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp))
+        Text(if (isSyncing) "Synchronizing…" else "Synchronize now")
+    }
+    if (syncMessage.isNotBlank()) Text(syncMessage, style = MaterialTheme.typography.bodySmall)
 }
 
 @Composable
@@ -1450,27 +1431,33 @@ private fun DashboardStatus(
 
 @Composable
 private fun MetricCard(card: MetricCardState) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Text(text = card.metric.title, style = MaterialTheme.typography.titleMedium)
-            Text(text = card.timeRangeLabel, style = MaterialTheme.typography.bodySmall)
-            Text(
-                text = when (card.status) {
-                    MetricStatus.Ready -> listOf(card.value, card.unit)
-                        .filter { it.isNotBlank() }
-                        .joinToString(" ")
-                    MetricStatus.NoData -> "No data available"
-                    MetricStatus.PermissionMissing -> "Permission missing"
-                    MetricStatus.Error -> "Error"
-                },
-                style = MaterialTheme.typography.headlineSmall
-            )
-            card.details.forEach { detail ->
-                Text(text = detail, style = MaterialTheme.typography.bodyMedium)
+    var expanded by rememberSaveable(card.metric) { mutableStateOf(false) }
+    val icon = when (card.metric) {
+        HealthMetric.Steps -> CompanionIcons.Steps
+        HealthMetric.Distance -> CompanionIcons.Pin
+        HealthMetric.ActiveCalories, HealthMetric.TotalCalories -> CompanionIcons.Flame
+        else -> CompanionIcons.Heart
+    }
+    val accent = when (card.metric) {
+        HealthMetric.Steps -> MaterialTheme.colorScheme.secondary
+        HealthMetric.ActiveCalories, HealthMetric.TotalCalories -> MaterialTheme.colorScheme.tertiary
+        HealthMetric.LatestHeartRate, HealthMetric.RestingHeartRate -> MaterialTheme.colorScheme.error
+        else -> MaterialTheme.colorScheme.primary
+    }
+    ReferenceCard {
+        Surface(onClick = { expanded = !expanded }, color = MaterialTheme.colorScheme.surface) {
+            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Surface(color = accent.copy(alpha = .08f), shape = RoundedCornerShape(24.dp)) { Icon(icon, null, Modifier.padding(10.dp).size(24.dp), tint = accent) }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(card.metric.title.removePrefix("Today's ").replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.bodyMedium)
+                    Text(when (card.status) { MetricStatus.Ready -> "${card.value} ${card.unit}"; MetricStatus.NoData -> "No data"; MetricStatus.PermissionMissing -> "Permission required"; MetricStatus.Error -> "Unavailable" }, style = MaterialTheme.typography.titleLarge)
+                }
+                Icon(if (expanded) Icons.Default.KeyboardArrowUp else CompanionIcons.Chevron, null, Modifier.size(18.dp))
             }
+        }
+        if (expanded) {
+            Text(card.timeRangeLabel, style = MaterialTheme.typography.bodySmall)
+            card.details.forEach { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
     }
 }
@@ -1589,103 +1576,37 @@ private fun TodayMealsCard(
     onSync: () -> Unit,
     onDelete: (ServerMeal) -> Unit
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(text = "Today's meals", style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        text = when {
-                            isLoading -> "Refreshing dashboard"
-                            meals.isEmpty() -> "No meals logged"
-                            meals.size == 1 -> "1 meal logged"
-                            else -> "${meals.size} meals logged"
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+    var menu by remember { mutableStateOf(false) }
+    ReferenceCard {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("Meals (${meals.size})", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+            IconButton(onClick = onRefresh, enabled = !isLoading) { Icon(Icons.Default.Refresh, "Refresh meals", Modifier.size(20.dp)) }
+            Box {
+                IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, "Meal list options", Modifier.size(20.dp)) }
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    DropdownMenuItem(text = { Text("Refresh meals") }, onClick = { menu = false; onRefresh() })
+                    DropdownMenuItem(text = { Text("Sync to Health Connect") }, onClick = { menu = false; onSync() })
                 }
-                if (isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                } else {
-                    IconButton(onClick = onRefresh) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh meals")
-                    }
-                }
-            }
-
-            if (!isLoading && meals.isEmpty()) {
-                Text(
-                    text = "No meals yet today",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            meals.forEachIndexed { index, meal ->
-                if (index > 0) HorizontalDivider()
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = meal.title, style = MaterialTheme.typography.titleSmall)
-                        Text(
-                            text = "${formatMealTime(meal.eatenAt)} · ${meal.mealType.label}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "P ${formatMealNumber(meal.proteinG)}g  C ${formatMealNumber(meal.carbsG)}g  F ${formatMealNumber(meal.fatG)}g",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = "${formatMealNumber(meal.caloriesKcal)} kcal",
-                            style = MaterialTheme.typography.labelLarge
-                        )
-                        IconButton(
-                            onClick = { onDelete(meal) },
-                            enabled = deletingMealId == null,
-                            modifier = Modifier.semantics {
-                                contentDescription = "Delete ${meal.title}"
-                            }
-                        ) {
-                            if (deletingMealId == meal.serverId) {
-                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                            } else {
-                                Icon(Icons.Default.Delete, contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.error)
-                            }
-                        }
-                    }
-                }
-            }
-
-            OutlinedButton(
-                onClick = onSync,
-                enabled = !isSyncing && !isLoading,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(if (isSyncing) "Syncing to Health Connect" else "Sync meals to Health Connect")
-            }
-            if (message.isNotBlank()) {
-                Text(text = message, style = MaterialTheme.typography.bodySmall)
-            }
-            if (syncMessage.isNotBlank()) {
-                Text(text = syncMessage, style = MaterialTheme.typography.bodySmall)
             }
         }
+        if (isLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
+        if (!isLoading && meals.isEmpty()) Text("No meals registered for this nutrition day.", style = MaterialTheme.typography.bodyMedium)
+        meals.forEachIndexed { index, meal ->
+            if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            var mealMenu by remember(meal.serverId) { mutableStateOf(false) }
+            ReferenceMealRow(meal) {
+                Box {
+                    IconButton(onClick = { mealMenu = true }, enabled = deletingMealId == null) {
+                        if (deletingMealId == meal.serverId) CircularProgressIndicator(Modifier.size(18.dp))
+                        else Icon(Icons.Default.MoreVert, "Options for ${meal.title}", Modifier.size(18.dp))
+                    }
+                    DropdownMenu(expanded = mealMenu, onDismissRequest = { mealMenu = false }) {
+                        DropdownMenuItem(text = { Text("Delete meal", color = MaterialTheme.colorScheme.error) }, onClick = { mealMenu = false; onDelete(meal) }, leadingIcon = { Icon(Icons.Default.Delete, null) })
+                    }
+                }
+            }
+        }
+        if (message.isNotBlank()) Text(message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -1712,77 +1633,31 @@ private fun FoodDiaryCard(
     isSubmitting: Boolean,
     onSubmit: () -> Unit
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Text(text = "Food diary", style = MaterialTheme.typography.titleMedium)
-            MealTypeSelector(
-                selectedMealType = mealType,
-                onMealTypeChange = onMealTypeChange
-            )
-            TextField(
-                value = eatenAt,
-                onValueChange = onEatenAtChange,
-                label = { Text("Eaten at") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-            TextField(
-                value = title,
-                onValueChange = onTitleChange,
-                label = { Text("Meal name") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-            TextField(
-                value = calories,
-                onValueChange = onCaloriesChange,
-                label = { Text("Calories") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextField(
-                    value = protein,
-                    onValueChange = onProteinChange,
-                    label = { Text("Protein g") },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true
-                )
-                TextField(
-                    value = carbs,
-                    onValueChange = onCarbsChange,
-                    label = { Text("Carbs g") },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true
-                )
-            }
-            TextField(
-                value = fat,
-                onValueChange = onFatChange,
-                label = { Text("Fat g") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-            TextField(
-                value = notes,
-                onValueChange = onNotesChange,
-                label = { Text("Notes") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Button(onClick = onSubmit, enabled = !isSubmitting) {
-                Text(if (isSubmitting) "Uploading" else "Add meal")
-            }
-            if (message.isNotBlank()) {
-                Text(text = message)
-            }
-            if (lastSubmittedMeal.isNotBlank()) {
-                Text(text = "Last added: $lastSubmittedMeal")
-            }
+    var typeMenu by remember { mutableStateOf(false) }
+    Text("Meal type", style = MaterialTheme.typography.bodySmall)
+    Box {
+        OutlinedButton(onClick = { typeMenu = true }, enabled = !isSubmitting, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)) {
+            Icon(CompanionIcons.Food, null, Modifier.size(20.dp)); Spacer(Modifier.width(12.dp)); Text(mealType.label, Modifier.weight(1f))
+            Icon(Icons.Default.KeyboardArrowDown, null)
+        }
+        DropdownMenu(expanded = typeMenu, onDismissRequest = { typeMenu = false }) {
+            MealType.entries.forEach { item -> DropdownMenuItem(text = { Text(item.label) }, onClick = { typeMenu = false; onMealTypeChange(item) }) }
         }
     }
+    MealDateTimeField(eatenAt, onEatenAtChange, !isSubmitting)
+    OutlinedTextField(value = title, onValueChange = onTitleChange, label = { Text("Meal name *") }, modifier = Modifier.fillMaxWidth(), singleLine = true, enabled = !isSubmitting)
+    val fields = listOf(Triple("Calories", calories, onCaloriesChange), Triple("Protein", protein, onProteinChange),
+        Triple("Carbohydrates", carbs, onCarbsChange), Triple("Fat", fat, onFatChange))
+    fields.chunked(if (LocalDensity.current.fontScale >= 1.5f) 1 else 2).forEach { pair ->
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            pair.forEach { (label, value, change) -> OutlinedTextField(value = value, onValueChange = change,
+                label = { Text(label) }, suffix = { Text(if (label == "Calories") "kcal" else "g") },
+                modifier = Modifier.weight(1f), singleLine = true, enabled = !isSubmitting,
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal)) }
+        }
+    }
+    OutlinedTextField(value = notes, onValueChange = onNotesChange, label = { Text("Notes (optional)") }, modifier = Modifier.fillMaxWidth(), minLines = 2, enabled = !isSubmitting)
+    if (message.isNotBlank()) Text(message, style = MaterialTheme.typography.bodySmall)
 }
 
 @Composable
