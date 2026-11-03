@@ -1,0 +1,8 @@
+# Opt-in Firebase sender. The credential is mounted read-only, never baked into an image.
+services:
+  api:
+    environment:
+      FCM_PROJECT_ID: ${FCM_PROJECT_ID:?Set FCM_PROJECT_ID}
+      GOOGLE_APPLICATION_CREDENTIALS: /run/health-push/firebase-service-account.json
+    volumes:
+      - ${FCM_CREDENTIALS_FILE:?Set FCM_CREDENTIALS_FILE}:/run/health-push/firebase-service-account.json:ro

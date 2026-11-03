@@ -48,6 +48,10 @@ class ServerSettingsRepository(private val context: Context) {
         readToken: String,
         allowInsecureHttpForLan: Boolean
     ) {
+        val old = settings.first()
+        if (old.serverBaseUrl != serverBaseUrl.trim() || old.readToken != readToken.trim()) {
+            com.uriel.healthconnecttest.sync.MealPush.detach(context, old)
+        }
         context.serverSettingsDataStore.edit { preferences ->
             preferences[SERVER_BASE_URL] = serverBaseUrl.trim()
             preferences[DEVICE_ID] = deviceId.trim()
@@ -56,6 +60,7 @@ class ServerSettingsRepository(private val context: Context) {
             preferences[READ_TOKEN] = readToken.trim()
             preferences[ALLOW_INSECURE_HTTP] = allowInsecureHttpForLan
         }
+        com.uriel.healthconnecttest.sync.MealPush.scheduleRegistration(context)
     }
 
     suspend fun saveSyncScheduleSettings(
@@ -84,6 +89,8 @@ class ServerSettingsRepository(private val context: Context) {
 
     suspend fun setMealNotificationsEnabled(enabled: Boolean) {
         context.serverSettingsDataStore.edit { it[MEAL_NOTIFICATIONS_ENABLED] = enabled }
+        if (!enabled) com.uriel.healthconnecttest.sync.MealPush.prefs(context).edit().remove("binding").remove("scope").apply()
+        com.uriel.healthconnecttest.sync.MealPush.scheduleRegistration(context)
     }
 
     suspend fun markServerMealSynced(syncId: String) {

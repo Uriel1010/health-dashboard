@@ -34,7 +34,7 @@ object MealNotifications {
             Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) &&
             NotificationManagerCompat.from(context).areNotificationsEnabled()
 
-    suspend fun observe(context: Context, settings: ServerSettings, meals: List<ServerMeal>, silent: Boolean = false) {
+    suspend fun observe(context: Context, settings: ServerSettings, meals: List<ServerMeal>, silent: Boolean = false, allowUninitialized: Boolean = false) {
         if (!settings.mealNotificationsEnabled) return
         mutex.withLock {
             val manager = context.getSystemService(NotificationManager::class.java)
@@ -43,12 +43,13 @@ object MealNotifications {
                 description = "A notification for each newly registered meal"
             })
             // Keep discovery independent of Health Connect writes and widget deduplication.
-            val scope = settings.serverBaseUrl.trimEnd('/') + ":" + settings.readToken.hashCode()
+            val scope = MealPush.scope(settings)
+            val legacyScope = settings.serverBaseUrl.trimEnd('/') + ":" + settings.readToken.hashCode()
             context.mealNotificationStore.edit { preferences ->
-                val initialized = preferences[scopeKey] == scope
+                val initialized = preferences[scopeKey] == scope || preferences[scopeKey] == legacyScope
                 val seen = if (initialized) preferences[seenKey].orEmpty() else emptySet()
                 val fresh = meals.filterNot { it.serverId.toString() in seen }
-                if (initialized && !silent && allowed(context)) {
+                if ((initialized || allowUninitialized) && !silent && allowed(context)) {
                     fresh.forEach { meal ->
                         val intent = Intent(context, MainActivity::class.java).apply {
                             putExtra("open_food", true)
@@ -62,6 +63,7 @@ object MealNotifications {
                             .setContentText("${meal.caloriesKcal.toInt()} kcal | ${meal.mealType.label}")
                             .setContentIntent(pending)
                             .setAutoCancel(true)
+                            .setOnlyAlertOnce(true)
                             .build()
                         try {
                             manager.notify("meal-${meal.serverId}", 1, notification)

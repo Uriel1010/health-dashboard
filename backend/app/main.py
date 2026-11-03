@@ -1,4 +1,6 @@
 import logging
+import asyncio
+from contextlib import asynccontextmanager, suppress
 import time
 from datetime import datetime, timezone
 from urllib.error import HTTPError, URLError
@@ -19,7 +21,21 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 logger = logging.getLogger("health-dashboard")
 
 settings = get_settings()
-app = FastAPI(title="Health Dashboard API", version="0.3.0")
+from app import push
+
+
+@asynccontextmanager
+async def lifespan(app):
+    sender = asyncio.create_task(push.run_sender())
+    try:
+        yield
+    finally:
+        sender.cancel()
+        with suppress(asyncio.CancelledError):
+            await sender
+
+
+app = FastAPI(title="Health Dashboard API", version="0.3.1", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -54,6 +70,7 @@ def service_health(db: Session = Depends(get_db)) -> HealthResponse:
 
 
 app.include_router(account.router)
+app.include_router(push.router)
 app.include_router(ingest.router)
 app.include_router(nutrition_user.router)
 app.include_router(health.router)

@@ -34,6 +34,9 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path=self.path.split('?')[0]
         if path=='/fixture/info': self.reply({'fixture':'health-companion-reference-fixture'})
+        elif path.startswith('/api/v1/push/meals/'):
+            item=next((item for item in meals if item['id']==int(path.rsplit('/',1)[-1])),None)
+            self.reply(item if item else {'detail':'Meal unavailable'},200 if item else 404)
         elif path.endswith('/auth/me'): self.reply(user)
         elif path.endswith('/nutrition/meals'): self.reply({'detail':'Synthetic connection failure'},503) if failure else self.reply({'meals':meals})
         elif path.endswith('/nutrition/statistics'): self.reply(statistics)
@@ -43,6 +46,7 @@ class Handler(BaseHTTPRequestHandler):
         global failure
         body=json.loads(self.rfile.read(int(self.headers.get('Content-Length','0'))) or b'{}')
         if self.path=='/fixture/fail': failure=body.get('fail',False); self.reply({'ok':True})
+        elif self.path=='/api/v1/push/installations': self.reply({'binding':'a'*48,'available':True})
         elif self.path.endswith('/auth/login'): self.reply(user)
         elif self.path.endswith('/nutrition/meals'):
             new=meal(max(item['id'] for item in meals)+1,body['title'],body['mealType'],12,body['caloriesKcal'],body['proteinG'],body['carbsG'],body['fatG'],None)

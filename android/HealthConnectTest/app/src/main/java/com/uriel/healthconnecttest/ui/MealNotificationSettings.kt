@@ -53,7 +53,7 @@ fun MealNotificationSettings(settings: ServerSettings, repository: ServerSetting
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text("New meal notifications", style = MaterialTheme.typography.titleMedium)
-                Text("Each new meal found during sync", style = MaterialTheme.typography.bodySmall,
+                Text("Push notifications for each new server meal", style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Switch(checked = settings.mealNotificationsEnabled, onCheckedChange = { enabled ->
@@ -63,9 +63,8 @@ fun MealNotificationSettings(settings: ServerSettings, repository: ServerSetting
             })
         }
         if (settings.mealNotificationsEnabled) {
-            Text(if (!settings.backgroundSyncEnabled) "Enable background sync to receive meals while the app is closed."
-                else if (settings.readToken.isBlank()) "Sign in to the dashboard to discover new meals."
-                else "Checked on refresh and your background sync schedule.", style = MaterialTheme.typography.bodySmall)
+            Text(if (settings.readToken.isBlank()) "Sign in to receive new meal notifications."
+                else "New meals arrive by push, independently of the sync interval. Scheduled sync catches missed meals. Offline or force-stopped apps may receive alerts later.", style = MaterialTheme.typography.bodySmall)
         }
         TextButton(onClick = {
             context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)

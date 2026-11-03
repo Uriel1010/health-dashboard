@@ -33,6 +33,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        com.uriel.healthconnecttest.sync.MealPush.scheduleRegistration(applicationContext)
         CoroutineScope(Dispatchers.IO).launch {
             val settings = ServerSettingsRepository(applicationContext).settings.first()
             if (settings.syncOnAppOpenEnabled) {

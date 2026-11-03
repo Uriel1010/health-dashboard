@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+if (file("google-services.json").exists()) apply(plugin = "com.google.gms.google-services")
+
 val productionSigningPath = providers.environmentVariable("HEALTH_SIGNING_PROPERTIES").orNull
 val productionSigning = productionSigningPath?.let { path ->
     Properties().apply { file(path).inputStream().use { load(it) } }
@@ -18,8 +20,8 @@ android {
         applicationId = "com.uriel.healthconnecttest"
         minSdk = 28
         targetSdk = 36
-        versionCode = 11
-        versionName = "0.5.0"
+        versionCode = 12
+        versionName = "0.6.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -56,10 +58,13 @@ android {
 tasks.configureEach {
     if (name in setOf("packageRelease", "bundleRelease")) doFirst {
         check(productionSigning != null) { "Set HEALTH_SIGNING_PROPERTIES to your private signing properties file before building a release." }
+        check(file("google-services.json").exists()) { "Provide your local Firebase Android configuration before building a production release." }
     }
 }
 
 dependencies {
+    implementation(platform("com.google.firebase:firebase-bom:34.5.0"))
+    implementation("com.google.firebase:firebase-messaging")
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
