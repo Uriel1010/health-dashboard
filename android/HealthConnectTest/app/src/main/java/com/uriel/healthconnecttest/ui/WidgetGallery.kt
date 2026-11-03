@@ -24,11 +24,12 @@ fun WidgetGallery() {
     var configureAverage by remember { mutableStateOf(false) }
     var period by remember { mutableIntStateOf(7) }
     var metric by remember { mutableStateOf(NutritionMetric.Calories) }
+    var averageProvider by remember { mutableStateOf<Class<*>>(NutritionAverageWidgetProvider::class.java) }
     fun pin(index: Int, provider: Class<*>) {
         notice = if (manager.isRequestPinAppWidgetSupported) {
-            val callback = if (index == 2) PendingIntent.getBroadcast(context, (System.nanoTime() and 0x7fffffff).toInt(),
-                Intent(context, NutritionAverageWidgetProvider::class.java)
-                    .setAction(NutritionAverageWidgetProvider.PIN_CONFIGURED)
+            val callback = if (index % 3 == 2) PendingIntent.getBroadcast(context, (System.nanoTime() and 0x7fffffff).toInt(),
+                Intent(context, provider)
+                    .setAction(if (provider == NutritionAverageWidgetProvider::class.java) NutritionAverageWidgetProvider.PIN_CONFIGURED else CompanionWidgetProvider.PIN_CONFIGURED)
                     .putExtra("period", period).putExtra("metric", metric.name),
                 PendingIntent.FLAG_UPDATE_CURRENT or if (Build.VERSION.SDK_INT >= 31) PendingIntent.FLAG_MUTABLE else 0) else null
             val requested = runCatching { manager.requestPinAppWidget(ComponentName(context, provider), null, callback) }.getOrDefault(false)
@@ -41,7 +42,13 @@ fun WidgetGallery() {
     val choices = listOf(
         Triple("Today's progress", "Wide · Calories, protein and fiber with progress bars", NutritionWidgetProvider::class.java),
         Triple("Daily rings", "Compact · Today's nutrition in three rings", NutritionRingsWidgetProvider::class.java),
-        Triple("Nutrition average", "2 × 2 · Choose 7, 14 or 30 days and any nutrient", NutritionAverageWidgetProvider::class.java)
+        Triple("Nutrition average", "2 × 2 · Choose 7, 14 or 30 days and any nutrient", NutritionAverageWidgetProvider::class.java),
+        Triple("Today's progress · Full", "Purple gradient bars · Calories, protein and fiber", CompanionProgressWidget::class.java),
+        Triple("Daily rings · Full", "Five colored rings and a nutrition legend", CompanionRingsWidget::class.java),
+        Triple("Nutrition average · Full", "Choose a nutrient and 7, 14 or 30 completed days · Coverage and history", CompanionAverageWidget::class.java),
+        Triple("Today's progress · Mini", "1 × 1 · Calories, protein and fiber", CompanionMiniProgressWidget::class.java),
+        Triple("Daily rings · Mini", "1 × 1 · Five nutrition rings", CompanionMiniRingsWidget::class.java),
+        Triple("Nutrition average · Mini", "1 × 1 · Your chosen average and history", CompanionMiniAverageWidget::class.java)
     )
     choices.forEachIndexed { index, choice ->
         OutlinedCard(Modifier.fillMaxWidth()) {
@@ -53,7 +60,7 @@ fun WidgetGallery() {
                     Text("Layout preview", style = MaterialTheme.typography.labelSmall)
                 }
                 OutlinedButton(onClick = {
-                    if (index == 2) configureAverage = true else pin(index, choice.third)
+                    if (index % 3 == 2) { averageProvider = choice.third; configureAverage = true } else pin(index, choice.third)
                 }) { Text("Add widget") }
             }
         }
@@ -77,6 +84,6 @@ fun WidgetGallery() {
                 }
                 Text("Today excluded. Missing days do not count as zero.", style = MaterialTheme.typography.bodySmall)
             }
-        }, confirmButton = { TextButton(onClick = { configureAverage = false; pin(2, NutritionAverageWidgetProvider::class.java) }) { Text("Add widget") } },
+        }, confirmButton = { TextButton(onClick = { configureAverage = false; pin(2, averageProvider) }) { Text("Add widget") } },
         dismissButton = { TextButton(onClick = { configureAverage = false }) { Text("Cancel") } })
 }

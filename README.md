@@ -2,7 +2,7 @@
 
 Your health metrics and nutrition journal, on your own server. A React dashboard and a native Kotlin / Jetpack Compose Android app share one account, one set of nutrition goals, and one nutrition-day boundary.
 
-[Download Android APK](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.4.0/app-release.apk) · [Production release](https://github.com/Uriel1010/health-dashboard/releases/tag/android-production-v0.4.0) · [All releases](https://github.com/Uriel1010/health-dashboard/releases) · [API documentation](docs/USER_API.md)
+[Download Android APK](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.5.0/app-release.apk) · [Production release](https://github.com/Uriel1010/health-dashboard/releases/tag/android-production-v0.5.0) · [All releases](https://github.com/Uriel1010/health-dashboard/releases) · [API documentation](docs/USER_API.md)
 
 ![Desktop health dashboard showing sample activity, heart rate, sleep, weight, and sync status](docs/images/dashboard-desktop.png)
 
@@ -36,6 +36,17 @@ Daily goals and meal totals follow the account's reset hour and server timezone.
 *Version 0.3 uses the last 7, 14 and 30 completed nutrition days, excluding today. Averages use recorded days; missing days are not zero. Coverage is shown separately for every nutrient, including unknown fiber values. Screenshots use synthetic data.*
 
 In Android, open **Trends** for nutrition, activity and weight history. Open **Settings → App preferences → Home screen widgets** to choose progress bars, rings or an average widget. Each average widget has its own period and nutrient. See the [nutrition calculation specification](docs/V0.3.md).
+
+## Android 0.5 — Home-screen widgets
+
+Six new widgets join the existing collection: full-size and 1 × 1 progress, five nutrition rings, and configurable averages. Purple gradient bars and matching light/dark surfaces follow the Health Companion reference. The app also has a purple heart-and-pulse launcher icon.
+
+![Health Companion full-size and compact widgets in light mode with synthetic data](docs/images/android-0.5-widgets-light.png)
+![Health Companion full-size and compact widgets in dark mode with synthetic data](docs/images/android-0.5-widgets-dark.png)
+
+*Actual Android renderer output with synthetic data, verified through Android's widget host. Launcher padding, cell sizes and adaptive icon masks vary by device. Average widgets independently support any nutrient and 7, 14 or 30 completed days; full-size widgets show coverage and the saved date range. Today is excluded. Widget colors follow the app appearance preference and refresh on updates.*
+
+Add them through **Settings → App preferences → Home screen widgets**, or long-press your home screen and open **Widgets → Health Companion**. The original three widgets remain available. No backend changes are needed.
 
 ## Android 0.4 — Light and dark
 
@@ -88,8 +99,8 @@ For remote access, deploy behind HTTPS, set `SESSION_COOKIE_SECURE=true`, and ex
 
 **Minimum Android version: 9 / API 28.** Health features additionally require Health Connect availability, a data-producing app, and the relevant permissions.
 
-1. Download the [production APK](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.4.0/app-release.apk).
-2. Verify its SHA-256 against the [release checksums](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.4.0/SHA256SUMS).
+1. Download the [production APK](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.5.0/app-release.apk).
+2. Verify its SHA-256 against the [release checksums](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.5.0/SHA256SUMS).
 3. Install the APK and enter your server URL and dashboard account in Settings. Configure the account ingest token for health uploads and meal writes.
 4. Grant the Health Connect permissions you want to use. Optionally enable new-meal notifications and add a nutrition widget from your launcher.
 

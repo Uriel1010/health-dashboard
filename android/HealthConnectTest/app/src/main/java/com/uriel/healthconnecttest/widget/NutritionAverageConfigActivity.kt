@@ -24,7 +24,9 @@ class NutritionAverageConfigActivity : ComponentActivity() {
         setResult(RESULT_CANCELED)
         val id = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID)
         if (id == AppWidgetManager.INVALID_APPWIDGET_ID) { finish(); return }
-        if (AppWidgetManager.getInstance(this).getAppWidgetInfo(id)?.provider?.className != NutritionAverageWidgetProvider::class.java.name) {
+        if (AppWidgetManager.getInstance(this).getAppWidgetInfo(id)?.provider?.className.orEmpty() !in listOf(
+                NutritionAverageWidgetProvider::class.java.name, CompanionAverageWidget::class.java.name,
+                CompanionMiniAverageWidget::class.java.name)) {
             finish(); return
         }
         val preferences = getSharedPreferences("average_widgets", MODE_PRIVATE)
@@ -58,6 +60,7 @@ class NutritionAverageConfigActivity : ComponentActivity() {
                             lifecycleScope.launch {
                                 preferences.edit().putInt("period_$id", period).putString("metric_$id", metric).apply()
                                 NutritionAverageWidgetProvider.updateAll(applicationContext)
+                                CompanionWidgetProvider.updateAll(applicationContext)
                                 setResult(RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id))
                                 finish()
                             }

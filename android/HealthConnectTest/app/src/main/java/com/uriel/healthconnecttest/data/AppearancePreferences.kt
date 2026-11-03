@@ -15,5 +15,6 @@ object AppearancePreferences {
     }
     suspend fun setMode(context: Context, mode: AppearanceMode) {
         context.applicationContext.appearanceStore.edit { it[MODE] = mode.name }
+        com.uriel.healthconnecttest.widget.CompanionWidgetProvider.updateAll(context.applicationContext)
     }
 }

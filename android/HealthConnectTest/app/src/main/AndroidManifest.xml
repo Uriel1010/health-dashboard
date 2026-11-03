@@ -32,6 +32,30 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="false"
         android:theme="@style/Theme.HealthConnectTest">
+        <receiver android:name=".widget.CompanionProgressWidget" android:exported="false" android:label="Today's progress · Full">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/companion_progress_info" />
+        </receiver>
+        <receiver android:name=".widget.CompanionRingsWidget" android:exported="false" android:label="Daily rings · Full">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/companion_rings_info" />
+        </receiver>
+        <receiver android:name=".widget.CompanionAverageWidget" android:exported="false" android:label="Nutrition average · Full">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/companion_average_info" />
+        </receiver>
+        <receiver android:name=".widget.CompanionMiniProgressWidget" android:exported="false" android:label="Today's progress · Mini">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/companion_mini_progress_info" />
+        </receiver>
+        <receiver android:name=".widget.CompanionMiniRingsWidget" android:exported="false" android:label="Daily rings · Mini">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/companion_mini_rings_info" />
+        </receiver>
+        <receiver android:name=".widget.CompanionMiniAverageWidget" android:exported="false" android:label="Nutrition average · Mini">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/companion_mini_average_info" />
+        </receiver>
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.updates"

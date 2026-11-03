@@ -7,5 +7,6 @@ object NutritionWidgetsUpdater {
         NutritionWidgetUpdater.updateAll(context)
         NutritionRingsWidgetUpdater.updateAll(context)
         NutritionAverageWidgetProvider.updateAll(context)
+        CompanionWidgetProvider.updateAll(context)
     }
 }
