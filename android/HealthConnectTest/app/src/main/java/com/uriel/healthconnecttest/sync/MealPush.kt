@@ -131,7 +131,17 @@ class MealPushDeliveryWorker(context:Context,params:WorkerParameters):CoroutineW
             val current=ServerSettingsRepository(context).settings.first()
             if(current.mealNotificationsEnabled && MealPush.scope(current)==MealPush.scope(settings) && prefs.getString("binding",null)==binding) {
                 MealNotifications.observe(context,current,listOf(meal),allowUninitialized=true)
-                HealthSyncScheduler.enqueueManualWorkerSync(context)
+                if(current.updateNutritionWidgetEnabled) {
+                    val api=HealthSyncApiClient()
+                    val refreshed=api.fetchCurrentMeals(current)
+                    if(!refreshed.success) return@withContext Result.retry()
+                    val latest=ServerSettingsRepository(context).settings.first()
+                    if(MealPush.scope(latest)==MealPush.scope(current) && latest.updateNutritionWidgetEnabled) {
+                        com.uriel.healthconnecttest.widget.NutritionWidgetStore.replaceTodayMeals(context,refreshed.meals,refreshed.nutritionDay)
+                        runCatching { NutritionStatisticsStore.save(context,current,api.fetchNutritionStatistics(current)) }
+                        com.uriel.healthconnecttest.widget.NutritionWidgetsUpdater.updateAll(context)
+                    }
+                }
             }
             Result.success()
         } catch(e:kotlinx.coroutines.CancellationException) {throw e} catch(_:Exception) {Result.retry()}
