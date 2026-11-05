@@ -26,7 +26,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.NumberFormat
-import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
@@ -61,7 +60,7 @@ class MealNotificationActivity : ComponentActivity() {
                                 Text(item.title, style = MaterialTheme.typography.headlineMedium)
                                 Text(MealNotificationContent.nutrients(this@MealNotificationActivity, item), style = MaterialTheme.typography.titleMedium,
                                     color = MaterialTheme.colorScheme.primary)
-                                val stamp = runCatching { OffsetDateTime.parse(item.eatenAt).format(
+                                val stamp = runCatching { mealDisplayTime(item.eatenAt).format(
                                     DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT).withLocale(locale)) }.getOrDefault(item.eatenAt)
                                 Text(stamp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 val format = NumberFormat.getNumberInstance(locale).apply { maximumFractionDigits = 1 }

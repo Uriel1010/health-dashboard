@@ -82,7 +82,7 @@ internal fun ReferenceMealRow(meal: ServerMeal, trailing: @Composable (() -> Uni
         MealIllustration()
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(meal.title, style = MaterialTheme.typography.titleSmall)
-            val time = runCatching { OffsetDateTime.parse(meal.eatenAt).format(DateTimeFormatter.ofPattern("h:mm a")) }.getOrDefault("")
+            val time = runCatching { mealDisplayTime(meal.eatenAt).format(DateTimeFormatter.ofPattern("h:mm a")) }.getOrDefault("")
             Text("${meal.mealType.label} · $time", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -122,7 +122,7 @@ internal fun SyncDetailRow(label: String, value: String, good: Boolean? = null) 
 @Composable
 internal fun MealDateTimeField(value: String, onChange: (String) -> Unit, enabled: Boolean) {
     val context = LocalContext.current
-    val local = runCatching { OffsetDateTime.parse(value).toLocalDateTime() }.getOrElse {
+    val local = runCatching { mealDisplayTime(value).toLocalDateTime() }.getOrElse {
         runCatching { LocalDateTime.parse(value) }.getOrDefault(LocalDateTime.now())
     }
     Text("Eaten at", style = MaterialTheme.typography.bodySmall)

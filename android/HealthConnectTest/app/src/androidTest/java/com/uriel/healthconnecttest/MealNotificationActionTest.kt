@@ -59,6 +59,10 @@ class MealNotificationActionTest {
             assertTrue("Notification action opens its exact meal",opened)
             waitFor(meal.title)
             waitFor(MealNotificationContent.nutrients(context,meal))
+            val localStamp = java.time.format.DateTimeFormatter.ofLocalizedDateTime(java.time.format.FormatStyle.SHORT)
+                .withLocale(context.resources.configuration.locales[0]).withZone(java.time.ZoneId.systemDefault())
+                .format(java.time.OffsetDateTime.parse(meal.eatenAt).toInstant())
+            waitFor(localStamp)
             instrumentation.waitForIdleSync()
             Thread.sleep(300)
             java.io.File(context.getExternalFilesDir(null),"meal-detail-061.png").outputStream().use {
