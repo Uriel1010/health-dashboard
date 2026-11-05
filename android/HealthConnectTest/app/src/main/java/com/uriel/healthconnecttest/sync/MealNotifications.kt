@@ -3,19 +3,15 @@ package com.uriel.healthconnecttest.sync
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
-import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.uriel.healthconnecttest.MainActivity
 import com.uriel.healthconnecttest.R
 import com.uriel.healthconnecttest.data.ServerSettings
 import kotlinx.coroutines.sync.Mutex
@@ -38,9 +34,9 @@ object MealNotifications {
         if (!settings.mealNotificationsEnabled) return
         mutex.withLock {
             val manager = context.getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(NotificationChannel(CHANNEL, "New meals",
+            manager.createNotificationChannel(NotificationChannel(CHANNEL, context.getString(R.string.meal_notification_channel),
                 NotificationManager.IMPORTANCE_DEFAULT).apply {
-                description = "A notification for each newly registered meal"
+                description = context.getString(R.string.meal_notification_channel_description)
             })
             // Keep discovery independent of Health Connect writes and widget deduplication.
             val scope = MealPush.scope(settings)
@@ -51,22 +47,10 @@ object MealNotifications {
                 val fresh = meals.filterNot { it.serverId.toString() in seen }
                 if ((initialized || allowUninitialized) && !silent && allowed(context)) {
                     fresh.forEach { meal ->
-                        val intent = Intent(context, MainActivity::class.java).apply {
-                            putExtra("open_food", true)
-                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                        }
-                        val pending = PendingIntent.getActivity(context, 300,
-                            intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-                        val notification = NotificationCompat.Builder(context, CHANNEL)
-                            .setSmallIcon(R.drawable.ic_meal_notification)
-                            .setContentTitle("New meal: ${meal.title}")
-                            .setContentText("${meal.caloriesKcal.toInt()} kcal | ${meal.mealType.label}")
-                            .setContentIntent(pending)
-                            .setAutoCancel(true)
-                            .setOnlyAlertOnce(true)
-                            .build()
+                        val notification = MealNotificationContent.build(context, meal, scope)
                         try {
                             manager.notify("meal-${meal.serverId}", 1, notification)
+                            MealNotificationContent.updateSummary(context)
                         } catch (_: SecurityException) {
                             // Permission can be revoked between the check and posting.
                         }

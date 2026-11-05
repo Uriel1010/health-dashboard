@@ -2,7 +2,7 @@
 
 Your health metrics and nutrition journal, on your own server. A React dashboard and a native Kotlin / Jetpack Compose Android app share one account, one set of nutrition goals, and one nutrition-day boundary.
 
-[Download Android APK](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.6.0/app-release.apk) · [Production release](https://github.com/Uriel1010/health-dashboard/releases/tag/android-production-v0.6.0) · [All releases](https://github.com/Uriel1010/health-dashboard/releases) · [API documentation](docs/USER_API.md)
+[Download Android APK](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.6.1/app-release.apk) · [Production release](https://github.com/Uriel1010/health-dashboard/releases/tag/android-production-v0.6.1) · [All releases](https://github.com/Uriel1010/health-dashboard/releases) · [API documentation](docs/USER_API.md)
 
 ![Desktop health dashboard showing sample activity, heart rate, sleep, weight, and sync status](docs/images/dashboard-desktop.png)
 
@@ -19,7 +19,7 @@ Your health metrics and nutrition journal, on your own server. A React dashboard
 | 7-, 14-, and 30-day completed-day averages | Trends screen, daily charts and configurable average widgets |
 | Multi-user accounts and per-user ingest tokens | Verified in-app release downloads and Android installer handoff |
 
-The Android app is primarily a companion to server-registered meals. Manual meal entry is available when needed. Android 0.6 adds server-triggered meal push notifications through Firebase Cloud Messaging, with scheduled sync as recovery. Enable New meal notifications in App preferences. Delivery depends on connectivity, notification permission and Android background restrictions. See [push setup and verification](docs/MEAL_PUSH.md).
+The Android app is primarily a companion to server-registered meals. Manual meal entry is available when needed. Android 0.6 adds server-triggered meal push notifications through Firebase Cloud Messaging, with scheduled sync as recovery. Enable New meal notifications in App preferences. Version 0.6.1 adds localized calorie/protein details, native grouping and a View meal action that opens the specific authenticated meal. Delivery depends on connectivity, notification permission and Android background restrictions. See [push setup and verification](docs/MEAL_PUSH.md).
 
 ## Nutrition, at a glance
 
@@ -99,8 +99,8 @@ For remote access, deploy behind HTTPS, set `SESSION_COOKIE_SECURE=true`, and ex
 
 **Minimum Android version: 9 / API 28.** Health features additionally require Health Connect availability, a data-producing app, and the relevant permissions.
 
-1. Download the [production APK](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.6.0/app-release.apk).
-2. Verify its SHA-256 against the [release checksums](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.6.0/SHA256SUMS).
+1. Download the [production APK](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.6.1/app-release.apk).
+2. Verify its SHA-256 against the [release checksums](https://github.com/Uriel1010/health-dashboard/releases/download/android-production-v0.6.1/SHA256SUMS).
 3. Install the APK and enter your server URL and dashboard account in Settings. Configure the account ingest token for health uploads and meal writes.
 4. Grant the Health Connect permissions you want to use. Optionally enable new-meal notifications and add a nutrition widget from your launcher.
 

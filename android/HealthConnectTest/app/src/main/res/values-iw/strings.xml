@@ -1,0 +1,19 @@
+<resources>
+    <string name="meal_notification_channel">ארוחות חדשות</string>
+    <string name="meal_notification_channel_description">התראה לכל ארוחה חדשה שנרשמה</string>
+    <string name="meal_notification_nutrients">%1$s קלוריות · %2$s גרם חלבון</string>
+    <string name="meal_notification_view">הצגת הארוחה</string>
+    <string name="meal_notification_all">כל הארוחות</string>
+    <string name="meal_notification_loading">טוען את הארוחה…</string>
+    <string name="meal_notification_unavailable">הארוחה אינה זמינה. יש לבדוק את החיבור וההתחברות לחשבון, או לפתוח את רשימת הארוחות.</string>
+    <string name="meal_notification_account_changed">כדי להציג את הארוחה, יש להתחבר לחשבון שקיבל את ההתראה.</string>
+    <string name="meal_notification_retry">ניסיון נוסף</string>
+    <string name="meal_notification_carbs">פחמימות: %1$s גרם</string>
+    <string name="meal_notification_fat">שומן: %1$s גרם</string>
+    <string name="meal_notification_fiber">סיבים תזונתיים: %1$s גרם</string>
+    <plurals name="meal_notification_count">
+        <item quantity="one">ארוחה חדשה אחת</item>
+        <item quantity="two">2 ארוחות חדשות</item>
+        <item quantity="other">%1$d ארוחות חדשות</item>
+    </plurals>
+</resources>

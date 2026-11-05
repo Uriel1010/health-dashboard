@@ -2,7 +2,23 @@
     <string name="nutrition_average_widget_description">Nutrition average: choose 7, 14 or 30 completed days and a nutrient</string>
     <string name="nutrition_average_widget_label">Nutrition average</string>
     <string name="app_update_available">App update available</string>
-    <string name="app_name">HealthConnectTest</string>
+    <string name="app_name">Health Companion</string>
+    <string name="meal_notification_channel">New meals</string>
+    <string name="meal_notification_channel_description">A notification for each newly registered meal</string>
+    <string name="meal_notification_nutrients">%1$s kcal · %2$s g protein</string>
+    <string name="meal_notification_view">View meal</string>
+    <string name="meal_notification_all">All meals</string>
+    <string name="meal_notification_loading">Loading meal…</string>
+    <string name="meal_notification_unavailable">This meal is unavailable. Check your connection and sign-in, or open your meal list.</string>
+    <string name="meal_notification_account_changed">Sign in to the account that received this notification to view the meal.</string>
+    <string name="meal_notification_retry">Try again</string>
+    <string name="meal_notification_carbs">Carbohydrates: %1$s g</string>
+    <string name="meal_notification_fat">Fat: %1$s g</string>
+    <string name="meal_notification_fiber">Fiber: %1$s g</string>
+    <plurals name="meal_notification_count">
+        <item quantity="one">%1$d new meal</item>
+        <item quantity="other">%1$d new meals</item>
+    </plurals>
     <string name="nutrition_widget_description">Daily nutrition progress</string>
     <string name="nutrition_rings_widget_description">Daily nutrition rings</string>
 </resources>

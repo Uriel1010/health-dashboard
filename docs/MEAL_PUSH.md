@@ -28,3 +28,7 @@ The sender checks account/session validity and binding again before sending. Rev
 Backend unit tests cover transaction rollback, updates, account boundaries, old meals, revoked sessions, changed bindings, retries, invalid tokens and deleted meals. Android's emulator-only `MealPushTest` uses `scripts/reference_fixture_server.py` on localhost port 18016, `adb reverse tcp:18016 tcp:18016`, and notification permission. It injects the same opaque event data consumed by the Firebase service and exercises actual WorkManager, authenticated fetch and notification posting. It verifies one notification per meal, duplicate suppression, stale bindings and disabled notifications.
 
 An AOSP emulator cannot validate the Google Play services transport. A Play-enabled device is required for a full live FCM delivery/Doze test; FCM `validate_only` can independently check server credentials without delivering a message.
+
+## Notification presentation (Android 0.6.1)
+
+Meal names appear as titles with real calories/protein, localized Hebrew or English text, and a quiet native group summary. View meal opens the selected meal through the authenticated per-meal endpoint and rejects an account mismatch. The summary count updates when a meal is opened or dismissed. Android and the device skin control card rendering; the app preserves the existing notification channel and user settings.
