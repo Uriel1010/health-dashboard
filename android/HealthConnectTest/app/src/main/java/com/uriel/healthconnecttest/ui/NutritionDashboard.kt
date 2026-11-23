@@ -23,7 +23,9 @@ fun NutritionDashboard(progress: NutritionWidgetProgress?, day: String, meals: L
     message: String, onRefresh: () -> Unit, onViewMeals: () -> Unit, onEditGoals: () -> Unit) {
     if (loading) LinearProgressIndicator(Modifier.fillMaxWidth())
     val failure = message.isNotBlank() && message != "Meals refreshed"
-    if (failure) NutritionError(message, onRefresh)
+    val savedData = message.startsWith("Saved data") || message.startsWith("Showing saved meals")
+    if (savedData) Text(message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    else if (failure) NutritionError(message, onRefresh)
     if (progress == null) {
         ReferenceCard {
             Column(Modifier.fillMaxWidth().padding(vertical = 28.dp), horizontalAlignment = Alignment.CenterHorizontally,

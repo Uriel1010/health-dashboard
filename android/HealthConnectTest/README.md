@@ -1,5 +1,9 @@
 # HealthConnectApp
 
+## Offline nutrition
+
+After a successful online refresh, Today and Food reopen with the last complete meal list, totals, daily goals, and nutrition-day date. Trends also retain statistics and goal references. Failed refreshes preserve saved data and show a saved-data notice; an older nutrition day stays labeled with its original date. The cache is scoped to the server and signed-in session, so changing accounts or signing out hides the previous account's data. Meal uploads still require a connection.
+
 Native Android app for viewing Health Connect metrics and syncing a health snapshot to a configured server.
 
 ## Current Features

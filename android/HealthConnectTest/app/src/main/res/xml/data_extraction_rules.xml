@@ -5,6 +5,7 @@
 -->
 <data-extraction-rules>
     <cloud-backup>
+        <exclude domain="sharedpref" path="nutrition_offline.xml" />
         <exclude domain="sharedpref" path="meal_push.xml" />
         <!-- TODO: Use <include> and <exclude> to control what is backed up.
         <include .../>
@@ -12,6 +13,7 @@
         -->
     </cloud-backup>
     <device-transfer>
+        <exclude domain="sharedpref" path="nutrition_offline.xml" />
         <exclude domain="sharedpref" path="meal_push.xml" />
     </device-transfer>
     <!--

@@ -64,7 +64,7 @@ private fun AccountTrends(settings: ServerSettings) {
     val context = LocalContext.current.applicationContext
     val scope = rememberCoroutineScope()
     var statistics by remember { mutableStateOf(NutritionStatisticsStore.read(context, settings)) }
-    var goals by remember { mutableStateOf<NutritionGoals?>(null) }
+    var goals by remember { mutableStateOf(NutritionOfflineStore.goals(context, settings)) }
     var loading by remember { mutableStateOf(false) }
     var notice by remember { mutableStateOf("") }
     var cached by remember { mutableStateOf(statistics != null) }
@@ -77,21 +77,23 @@ private fun AccountTrends(settings: ServerSettings) {
         if (settings.readToken.isBlank()) { notice = "Sign in in Settings → Account & server to see your trends."; return }
         loading = true
         notice = ""
+        cached = statistics != null
         try {
             val json = api.fetchNutritionStatistics(settings)
             NutritionStatisticsStore.save(context, settings, json)
             statistics = NutritionStatistics.parse(json)
             cached = false
             goals = api.fetchNutritionGoals(settings)
+            goals?.let { NutritionOfflineStore.saveGoals(context, settings, it) }
             NutritionWidgetsUpdater.updateAll(context)
         } catch (e: CancellationException) { throw e }
-        catch (e: Exception) { notice = e.message ?: "Unable to refresh statistics" }
+        catch (e: Exception) { notice = if (cached) "Showing saved statistics. Unable to refresh." else e.message ?: "Unable to refresh statistics" }
         finally { loading = false }
     }
     LaunchedEffect(Unit) { refresh() }
     if (loading) LinearProgressIndicator(Modifier.fillMaxWidth())
     if (notice.isNotBlank()) Text(notice, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-    if (cached) Text("Saved data · Refresh to update", style = MaterialTheme.typography.bodySmall)
+    if (cached) Text("Saved data · ${java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT, java.text.DateFormat.SHORT).format(java.util.Date(NutritionStatisticsStore.updated(context)))} · Refresh to update", style = MaterialTheme.typography.bodySmall)
     val data = statistics
     val window = data?.windows?.firstOrNull { it.days == period }
     val points = data?.points?.takeLast(period).orEmpty()

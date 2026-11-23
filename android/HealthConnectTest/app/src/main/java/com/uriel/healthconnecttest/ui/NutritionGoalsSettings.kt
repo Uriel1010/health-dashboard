@@ -31,8 +31,9 @@ private fun GoalsForm(settings: ServerSettings, onSaved: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val api = remember { HealthSyncApiClient() }
-    var serverGoals by remember { mutableStateOf<NutritionGoals?>(null) }
-    var draft by rememberSaveable { mutableStateOf(List(5) { "" }) }
+    val savedGoals = remember { com.uriel.healthconnecttest.sync.NutritionOfflineStore.goals(context, settings) }
+    var serverGoals by remember { mutableStateOf(savedGoals) }
+    var draft by rememberSaveable { mutableStateOf(savedGoals?.values()?.map(Int::toString) ?: List(5) { "" }) }
     var dirty by rememberSaveable { mutableStateOf(false) }
     var touched by rememberSaveable { mutableStateOf(List(5) { false }) }
     var loading by remember { mutableStateOf(false) }
@@ -48,6 +49,7 @@ private fun GoalsForm(settings: ServerSettings, onSaved: () -> Unit) {
         notice = ""
         try {
             val goals = api.fetchNutritionGoals(settings)
+            com.uriel.healthconnecttest.sync.NutritionOfflineStore.saveGoals(context, settings, goals)
             serverGoals = goals
             if (!dirty) draft = goals.values().map(Int::toString)
         } catch (e: CancellationException) { throw e }
@@ -90,6 +92,7 @@ private fun GoalsForm(settings: ServerSettings, onSaved: () -> Unit) {
                         saving = true
                         try {
                             val goals = api.saveNutritionGoals(settings, NutritionGoals.parse(draft))
+                            com.uriel.healthconnecttest.sync.NutritionOfflineStore.saveGoals(context, settings, goals)
                             serverGoals = goals
                             draft = goals.values().map(Int::toString)
                             dirty = false

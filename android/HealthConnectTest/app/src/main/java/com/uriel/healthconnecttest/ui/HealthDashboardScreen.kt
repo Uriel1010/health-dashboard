@@ -114,6 +114,7 @@ import java.time.format.DateTimeFormatter
 import java.util.UUID
 import kotlin.math.roundToLong
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 
 private enum class AppTab(val label: String) {
     Today("Today"),
@@ -163,13 +164,17 @@ fun HealthDashboardScreen(modifier: Modifier = Modifier, openFood: Boolean = fal
     var isDashboardLoginInProgress by remember { mutableStateOf(false) }
     var serverMealSyncMessage by remember { mutableStateOf("") }
     var isSyncingServerMeals by remember { mutableStateOf(false) }
-    var serverMeals by remember { mutableStateOf<List<ServerMeal>>(emptyList()) }
-    var nutritionProgress by remember { mutableStateOf<com.uriel.healthconnecttest.widget.NutritionWidgetProgress?>(null) }
-    var nutritionDateLabel by remember { mutableStateOf("") }
+    val savedNutrition = remember(settings.serverBaseUrl, settings.readToken) {
+        com.uriel.healthconnecttest.sync.NutritionOfflineStore.read(context.applicationContext, settings)
+    }
+    var serverMeals by remember(settings.serverBaseUrl, settings.readToken) { mutableStateOf(savedNutrition?.meals.orEmpty()) }
+    var nutritionProgress by remember(settings.serverBaseUrl, settings.readToken) { mutableStateOf(savedNutrition?.progress) }
+    var nutritionDateLabel by remember(settings.serverBaseUrl, settings.readToken) { mutableStateOf(savedNutrition?.day?.let { "${it.date} | ${it.timezone} | resets ${it.resetHour}:00" }.orEmpty()) }
     var isLoadingServerMeals by remember { mutableStateOf(false) }
-    var nutritionLoaded by remember { mutableStateOf(false) }
-    LaunchedEffect(settings.serverBaseUrl, settings.readToken) { nutritionLoaded = false }
-    var mealListMessage by remember { mutableStateOf("") }
+    var nutritionLoaded by remember(settings.serverBaseUrl, settings.readToken) { mutableStateOf(savedNutrition != null) }
+    var mealListMessage by remember(settings.serverBaseUrl, settings.readToken) { mutableStateOf(savedNutrition?.let {
+        "Saved data for ${it.day.date} · Updated ${java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT, java.text.DateFormat.SHORT).format(java.util.Date(it.updated))}. Refresh to update."
+    }.orEmpty()) }
     var pendingMealDelete by remember { mutableStateOf<ServerMeal?>(null) }
     var deletingMealId by remember { mutableStateOf<Long?>(null) }
     var mealListRevision by remember { mutableStateOf(0) }
@@ -538,14 +543,20 @@ fun HealthDashboardScreen(modifier: Modifier = Modifier, openFood: Boolean = fal
             if (showResultMessage) mealListMessage = ""
             try {
                 val syncSettings = persistEditedSettings()
-                val today = LocalDate.now()
                 val result = apiClient.fetchCurrentMeals(syncSettings)
+                val currentSettings = repository.settings.first()
+                if (currentSettings.serverBaseUrl != syncSettings.serverBaseUrl || currentSettings.readToken != syncSettings.readToken) return@launch
                 if (result.success) {
                     com.uriel.healthconnecttest.sync.MealNotifications.observe(context.applicationContext, syncSettings, result.meals)
-                    serverMeals = result.meals.sortedByDescending { it.eatenAt }
                     if (result.failedParseCount > 0) {
                         mealListMessage = "Some meals could not be read. Totals have not been updated."
                         return@launch
+                    }
+                    com.uriel.healthconnecttest.sync.NutritionOfflineStore.save(context.applicationContext, syncSettings, result)
+                    serverMeals = result.meals.sortedByDescending { it.eatenAt }
+                    result.nutritionDay?.let { day ->
+                        com.uriel.healthconnecttest.sync.NutritionOfflineStore.saveGoals(context.applicationContext, syncSettings,
+                            com.uriel.healthconnecttest.sync.NutritionGoals(day.caloriesGoal.toInt(), day.proteinGoal.toInt(), day.carbsGoal.toInt(), day.fatGoal.toInt(), day.fiberGoal.toInt()))
                     }
                     NutritionWidgetStore.replaceTodayMeals(context.applicationContext, result.meals, result.nutritionDay)
                     nutritionProgress = NutritionWidgetStore.getTodayProgress(context.applicationContext)
@@ -561,10 +572,11 @@ fun HealthDashboardScreen(modifier: Modifier = Modifier, openFood: Boolean = fal
                         }
                     }
                 } else {
-                    mealListMessage = result.message
+                    mealListMessage = if (nutritionLoaded) "Showing saved meals for ${nutritionDateLabel.substringBefore(" |")}. Unable to refresh. ${result.message}" else result.message
                 }
+            } catch (exception: kotlinx.coroutines.CancellationException) { throw exception
             } catch (exception: Exception) {
-                mealListMessage = exception.message ?: "Unable to load meals"
+                mealListMessage = if (nutritionLoaded) "Showing saved meals for ${nutritionDateLabel.substringBefore(" |")}. Unable to refresh." else exception.message ?: "Unable to load meals"
             } finally {
                 isLoadingServerMeals = false
             }
@@ -583,6 +595,10 @@ fun HealthDashboardScreen(modifier: Modifier = Modifier, openFood: Boolean = fal
                     repository.forgetServerMealSynced(meal.syncId)
                     val remainingMeals = serverMeals.filterNot { it.serverId == meal.serverId }
                     serverMeals = remainingMeals
+                    com.uriel.healthconnecttest.sync.NutritionOfflineStore.read(context.applicationContext, syncSettings)?.let { saved ->
+                        com.uriel.healthconnecttest.sync.NutritionOfflineStore.save(context.applicationContext, syncSettings,
+                            com.uriel.healthconnecttest.sync.ServerMealsFetchResult(true, false, "", remainingMeals, nutritionDay = saved.day))
+                    }
                     NutritionWidgetStore.replaceTodayMeals(context.applicationContext, remainingMeals)
                     nutritionProgress = NutritionWidgetStore.getTodayProgress(context.applicationContext)
                     NutritionWidgetsUpdater.updateAll(context.applicationContext)
