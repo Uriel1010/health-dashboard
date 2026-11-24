@@ -263,3 +263,7 @@ app/src/main/java/com/uriel/healthconnecttest/
 - Manual meal Health Connect write: `NutritionRecord` with `WRITE_NUTRITION`
 - Offline meal queue: not implemented yet
 - Background server meal pull is not implemented yet
+
+## Private production signing
+
+Set `HEALTH_SIGNING_PROPERTIES` to a private signing properties file outside the checkout. On the maintained server, it is stored under `$HOME/.config/health-dashboard/android-signing/signing.properties`, alongside the production keystore. Use directory permissions 700 and file permissions 600. These files and the local Firebase `app/google-services.json` must remain outside Git commits and release attachments. The keystore certificate must match the installed production app; do not substitute a development key.
